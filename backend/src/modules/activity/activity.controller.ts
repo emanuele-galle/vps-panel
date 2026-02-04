@@ -1,6 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { activityService } from './activity.service';
+import { activityService, type ActivityLogFilters } from './activity.service';
 import { AppError } from '../../utils/errors';
 import {
   idSchema,

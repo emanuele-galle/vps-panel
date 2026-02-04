@@ -25,7 +25,7 @@ interface ActivityLogWithUser extends ActivityLog {
   } | null;
 }
 
-interface ActivityLogFilters {
+export interface ActivityLogFilters {
   userId?: string;
   action?: string;
   resource?: string;

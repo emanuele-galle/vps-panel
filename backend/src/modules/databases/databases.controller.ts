@@ -59,7 +59,7 @@ class DatabasesController {
     const query = getDatabasesQuerySchema.parse(request.query);
 
     const user = request.user as JwtPayload | undefined;
-    const filters: DatabaseFilters = {};
+    const filters: { projectId?: string; type?: string } = {};
 
     if (query.projectId) {
       filters.projectId = query.projectId;
