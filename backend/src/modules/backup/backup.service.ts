@@ -554,14 +554,29 @@ class BackupService {
   private async exportDatabaseForBackup(db: Database, destDir: string, projectSlug: string): Promise<void> {
     const dumpFile = join(destDir, `${db.name}-${db.type.toLowerCase()}.sql`);
 
-    // Decrypt password se necessario
+    // Validate database name and username to prevent injection
+    const DB_IDENTIFIER_PATTERN = /^[a-zA-Z_][a-zA-Z0-9_-]*$/;
+    if (!DB_IDENTIFIER_PATTERN.test(db.databaseName)) {
+      log.error(`[Backup Export] Invalid database name rejected: ${db.databaseName}`);
+      return;
+    }
+    if (db.username && !DB_IDENTIFIER_PATTERN.test(db.username)) {
+      log.error(`[Backup Export] Invalid database username rejected: ${db.username}`);
+      return;
+    }
+
+    // Decrypt password using isEncrypted() check
     let password = db.password;
     try {
-      // Prova a decriptare usando il servizio di encryption esistente
       const { encryptionService } = await import('../../services/encryption.service');
-      password = encryptionService.decrypt(db.password);
-    } catch {
-      // Se fallisce, usa la password come è (potrebbe essere già in chiaro)
+      if (encryptionService.isEncrypted(db.password)) {
+        password = encryptionService.decrypt(db.password);
+      } else {
+        log.warn(`[Backup Export] Password for ${db.name} is not encrypted`);
+      }
+    } catch (decryptErr) {
+      log.error(`[Backup Export] Failed to decrypt password for ${db.name}: ${decryptErr instanceof Error ? decryptErr.message : 'Unknown'}`);
+      return;
     }
 
     switch (db.type) {
@@ -600,9 +615,10 @@ class BackupService {
       case 'MYSQL': {
         const mysqlContainerName = `${projectSlug}-mysql`;
         try {
+          // Use MYSQL_PWD env var instead of -p flag to avoid password in process list
           await safeExec('docker', [
-            'exec', mysqlContainerName,
-            'mysqldump', '-u', db.username, `-p${password}`, db.databaseName
+            'exec', '-e', `MYSQL_PWD=${password}`, mysqlContainerName,
+            'mysqldump', '-u', db.username, db.databaseName
           ], { timeout: 300000 }).then(async (result) => {
             await writeFile(dumpFile, result.stdout);
           });
