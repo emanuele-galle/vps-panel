@@ -1,0 +1,13 @@
+# TLS Configuration for italafricacentrale.com
+# Uses Cloudflare Origin Certificate
+
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/italafricacentrale.com.pem
+      keyFile: /etc/traefik/certs/italafricacentrale.com.key
+
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /etc/traefik/certs/italafricacentrale.com.pem
+        keyFile: /etc/traefik/certs/italafricacentrale.com.key

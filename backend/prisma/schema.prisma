@@ -1,0 +1,864 @@
+// Prisma Schema for VPS Control Panel
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ==================== AUTH & USERS ====================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  password      String
+  role          UserRole  @default(STAFF)
+  isActive      Boolean   @default(true)
+
+  // 2FA
+  twoFactorEnabled    Boolean @default(false)
+  twoFactorSecret     String?
+  
+  // Preferences
+  preferences         Json?   @default("{\"theme\":\"system\",\"language\":\"it\",\"notifications\":{\"email\":true,\"push\":false,\"systemAlerts\":true,\"projectUpdates\":true},\"dashboard\":{\"autoRefresh\":true,\"refreshInterval\":30,\"compactView\":false}}")
+
+  // Relations
+  sessions      Session[]
+  projects      Project[]           // Projects owned by this user
+  projectMemberships ProjectMember[] // Projects this user is a member of
+  activityLogs  ActivityLog[]
+  backupUploads BackupUpload[]
+
+  // Claude Code relations
+  claudeCodeSessions ClaudeCodeSession[]
+  claudeCodeUsage    ClaudeCodeUsage[]
+  claudeCodeApiKey   ClaudeCodeApiKey?
+
+  // N8N relations
+  n8nBackups         N8nBackup[]
+
+  // Download tokens
+  downloadTokens     DownloadToken[]
+
+  // Timestamps
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  lastLoginAt   DateTime?
+
+  @@map("users")
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+}
+
+model Session {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token         String   @unique
+  refreshToken  String?  @unique
+  expiresAt     DateTime
+  ipAddress     String?
+  userAgent     String?
+
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+// ==================== PROJECT MEMBERS ====================
+
+model ProjectMember {
+  id            String              @id @default(cuid())
+
+  // Project relation
+  projectId     String
+  project       Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // User relation
+  userId        String
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Role within project
+  role          ProjectMemberRole   @default(MEMBER)
+
+  // Timestamps
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@index([projectId])
+  @@map("project_members")
+}
+
+enum ProjectMemberRole {
+  OWNER     // Full control (original creator or admin)
+  MEMBER    // Can view and work on the project
+}
+
+// ==================== PROJECTS ====================
+
+model Project {
+  id            String          @id @default(cuid())
+  name          String
+  slug          String          @unique
+  description   String?
+
+  // Owner
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Members (staff assigned to this project)
+  members       ProjectMember[]
+
+  // Client info
+  clientName    String?
+  clientEmail   String?
+
+  // Project settings
+  template      ProjectTemplate
+  status        ProjectStatus   @default(ACTIVE)
+  path          String          @unique
+  previewUrl    String?         // URL anteprima temporanea (es: slug.fodivps1.cloud)
+
+  // Resources
+  containers    Container[]
+  domains       Domain[]
+  volumes       Volume[]
+  networks      Network[]
+  databases     Database[]
+  backups       BackupUpload[]
+  fileBrowser   FileBrowserInstance?
+
+  // Claude Code
+  claudeCodeSessions ClaudeCodeSession[]
+  claudeCodeUsage    ClaudeCodeUsage[]
+
+  // Metadata
+  tags          String[]
+  notes         String?
+  credentials   Json?       // App access credentials (admin email/pass, api keys, etc.)
+
+  // Timestamps
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  lastDeployAt  DateTime?
+
+  @@index([userId])
+  @@index([status])
+  @@map("projects")
+}
+
+enum ProjectTemplate {
+  WORDPRESS
+  NODEJS
+  NEXTJS
+  PYTHON
+  PHP
+  STATIC
+  CUSTOM
+}
+
+enum ProjectStatus {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+  ERROR
+}
+
+// ==================== DOCKER RESOURCES ====================
+
+model Container {
+  id            String          @id @default(cuid())
+  dockerId      String          @unique
+  name          String
+  image         String
+
+  // Project relation
+  projectId     String
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Container config
+  ports         Json
+  environment   Json
+  volumes       Json
+  networks      String[]
+
+  // State
+  status        ContainerStatus @default(CREATED)
+  restartPolicy String          @default("unless-stopped")
+
+  // Resources
+  cpuLimit      Float?
+  memoryLimit   Int?
+
+  // Stats (cached)
+  lastCpuUsage  Float?
+  lastMemUsage  Int?
+  lastNetRx     BigInt?
+  lastNetTx     BigInt?
+  statsUpdatedAt DateTime?
+
+  // Timestamps
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  startedAt     DateTime?
+  stoppedAt     DateTime?
+
+  @@index([projectId])
+  @@index([status])
+  @@map("containers")
+}
+
+enum ContainerStatus {
+  CREATED
+  RUNNING
+  STOPPED
+  PAUSED
+  RESTARTING
+  EXITED
+  ERROR
+}
+
+model Volume {
+  id            String   @id @default(cuid())
+  dockerId      String   @unique
+  name          String
+  driver        String   @default("local")
+  mountpoint    String
+
+  // Project relation
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Metadata
+  size          BigInt?
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([projectId])
+  @@map("volumes")
+}
+
+model Network {
+  id            String   @id @default(cuid())
+  dockerId      String   @unique
+  name          String
+  driver        String   @default("bridge")
+  scope         String   @default("local")
+
+  // Project relation
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Config
+  subnet        String?
+  gateway       String?
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+
+  @@index([projectId])
+  @@map("networks")
+}
+
+// ==================== DOMAINS & SSL ====================
+
+model Domain {
+  id            String       @id @default(cuid())
+  domain        String       @unique
+
+  // Project relation
+  projectId     String
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Type
+  type          DomainType   @default(PREVIEW)
+
+  // SSL
+  sslEnabled    Boolean      @default(true)
+  sslProvider   String       @default("letsencrypt")
+  sslExpiresAt  DateTime?
+
+  // Status
+  status        DomainStatus @default(PENDING)
+  isActive      Boolean      @default(true)
+
+  // Timestamps
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  verifiedAt    DateTime?
+
+  @@index([projectId])
+  @@map("domains")
+}
+
+enum DomainType {
+  PREVIEW
+  CUSTOM
+}
+
+enum DomainStatus {
+  PENDING
+  ACTIVE
+  ERROR
+  EXPIRED
+}
+
+// ==================== DATABASE ====================
+
+model Database {
+  id            String       @id @default(cuid())
+  name          String
+  type          DatabaseType
+
+  // Project relation
+  projectId     String
+  project       Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Connection info (encrypted)
+  host          String
+  port          Int
+  username      String
+  password      String
+  databaseName  String
+
+  // Resources
+  size          BigInt?
+
+  // Timestamps
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([projectId])
+  @@map("databases")
+}
+
+enum DatabaseType {
+  MYSQL
+  POSTGRESQL
+  MONGODB
+  REDIS
+  SQLITE
+}
+
+// ==================== EMAIL (Hostinger) ====================
+
+model EmailAccount {
+  id            String   @id @default(cuid())
+  email         String   @unique
+
+  // Hostinger info
+  hostingerId   String?
+  quota         Int
+  usedSpace     Int?
+
+  // Settings
+  forwardTo     String?
+  autoReply     Boolean  @default(false)
+  autoReplyMsg  String?
+
+  // Status
+  isActive      Boolean  @default(true)
+
+  // Client/Project association (optional)
+  clientName    String?
+  notes         String?
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("email_accounts")
+}
+
+// ==================== MONITORING ====================
+
+model MetricsSnapshot {
+  id            String   @id @default(cuid())
+
+  // VPS metrics
+  cpuUsage      Float
+  memoryUsed    BigInt
+  memoryTotal   BigInt
+  diskUsed      BigInt
+  diskTotal     BigInt
+  networkRx     BigInt
+  networkTx     BigInt
+
+  // Docker metrics
+  containersRunning   Int
+  containersStopped   Int
+  imagesCount         Int
+  volumesCount        Int
+
+  // Timestamp
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("metrics_snapshots")
+}
+
+// ==================== ACTIVITY LOGS ====================
+
+model ActivityLog {
+  id            String       @id @default(cuid())
+
+  // User
+  userId        String?
+  user          User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  // Action
+  action        String
+  resource      String
+  resourceId    String?
+
+  // Details
+  description   String
+  metadata      Json?
+
+  // Status
+  status        LogStatus    @default(SUCCESS)
+  errorMessage  String?
+
+  // Request info
+  ipAddress     String?
+  userAgent     String?
+
+  // Timestamp
+  createdAt     DateTime     @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@map("activity_logs")
+}
+
+enum LogStatus {
+  SUCCESS
+  ERROR
+  WARNING
+}
+
+// ==================== BACKUP & IMPORT ====================
+
+model BackupUpload {
+  id            String        @id @default(cuid())
+
+  // User relation
+  userId        String
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // File info
+  filename      String        // Nome file salvato (hash)
+  originalName  String        // Nome originale caricato
+  filepath      String        // Path completo file
+  size          BigInt        // Dimensione in bytes
+  mimeType      String        @default("application/zip")
+
+  // Processing status
+  status        BackupStatus  @default(UPLOADED)
+
+  // Project association (dopo import)
+  projectId     String?
+  project       Project?      @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  projectPath   String?       // Path progetto dopo estrazione
+
+  // Google Drive export
+  driveFileId   String?       // ID file su Google Drive
+  driveExportedAt DateTime?
+
+  // Metadata
+  notes         String?
+  errorMessage  String?
+
+  // Timestamps
+  uploadedAt    DateTime      @default(now())
+  processedAt   DateTime?
+  expiresAt     DateTime      // Auto-cleanup dopo 24h
+  deletedAt     DateTime?
+
+  @@index([userId, status])
+  @@index([expiresAt])
+  @@index([status])
+  @@map("backup_uploads")
+}
+
+enum BackupStatus {
+  UPLOADED       // File caricato
+  PROCESSING     // In elaborazione
+  IMPORTED       // Importato come progetto
+  EXPORTED       // Esportato su Drive
+  FAILED         // Errore
+  EXPIRED        // Scaduto e da eliminare
+}
+
+// ==================== SYSTEM BACKUP ====================
+
+model SystemBackup {
+  id            String            @id @default(cuid())
+
+  // Tipo di backup
+  type          SystemBackupType
+
+  // File info
+  filename      String            // Nome file archivio
+  filepath      String            // Path completo file
+  size          BigInt            // Dimensione in bytes
+  checksum      String?           // SHA256 per verifica integrità
+
+  // Status
+  status        BackupStatus      @default(PROCESSING)
+
+  // Remote storage (opzionale)
+  remoteType    String?           // gdrive, s3, local
+  remoteId      String?           // ID file remoto
+
+  // Metadata
+  includedComponents  Json?       // Lista componenti inclusi
+  excludedPaths       Json?       // Path esclusi
+  notes               String?
+  errorMessage        String?
+
+  // Timestamps
+  createdAt     DateTime          @default(now())
+  completedAt   DateTime?
+  expiresAt     DateTime?
+
+  @@index([type, status])
+  @@index([createdAt])
+  @@map("system_backups")
+}
+
+enum SystemBackupType {
+  SYSTEM_TEMPLATE    // Solo sistema VPS Panel (per replicare)
+  FULL_DISASTER      // Backup completo (disaster recovery)
+}
+
+// ==================== FILE MANAGER ====================
+
+model FileBrowserInstance {
+  id            String              @id @default(cuid())
+
+  // Project relation (nullable for system instance)
+  projectId     String?             @unique
+  project       Project?            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Type and mount path
+  type          FileBrowserType     @default(PROJECT)
+  mountPath     String              @default("/var/www/projects")
+
+  // Container info
+  containerId   String?
+  port          Int
+
+  // Credentials
+  username      String              @default("admin")
+  password      String
+
+  // Status
+  status        String              @default("stopped")
+
+  // Timestamps
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  lastStartedAt DateTime?
+  lastStoppedAt DateTime?
+
+  @@index([projectId])
+  @@index([type])
+  @@index([status])
+  @@map("filebrowser_instances")
+}
+
+enum FileBrowserType {
+  PROJECT
+  SYSTEM
+}
+
+// ==================== SETTINGS ====================
+
+model SystemSetting {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  value         String
+  description   String?
+  category      String   @default("general")
+  isSecret      Boolean  @default(false)
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category])
+  @@map("system_settings")
+}
+
+// ==================== CLAUDE CODE ====================
+
+model ClaudeCodeSession {
+  id            String              @id @default(cuid())
+
+  // User relation
+  userId        String
+  user          User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Project relation (optional - can be global session)
+  projectId     String?
+  project       Project?            @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Session info
+  pid           Int?                // Process ID of claude CLI
+  workingDir    String              // Directory where claude is running
+  status        ClaudeSessionStatus @default(STARTING)
+
+  // WebSocket connection
+  socketId      String?             // Socket.io connection ID
+
+  // Request info
+  ipAddress     String?
+  userAgent     String?
+
+  // Timestamps
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+  lastActivityAt DateTime?
+  endedAt       DateTime?
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([status])
+  @@map("claude_code_sessions")
+}
+
+enum ClaudeSessionStatus {
+  STARTING
+  RUNNING
+  IDLE
+  STOPPED
+  ERROR
+}
+
+model ClaudeCodeUsage {
+  id            String   @id @default(cuid())
+
+  // User relation
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Project relation (optional)
+  projectId     String?
+  project       Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  // Session relation
+  sessionId     String?
+
+  // Usage metrics
+  inputTokens   Int      @default(0)
+  outputTokens  Int      @default(0)
+  cacheReadTokens  Int   @default(0)
+  cacheWriteTokens Int   @default(0)
+
+  // Cost (in USD cents)
+  costCents     Int      @default(0)
+
+  // Model info
+  model         String   @default("claude-sonnet-4-5-20250929")
+
+  // Timestamp
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([projectId, createdAt])
+  @@index([createdAt])
+  @@map("claude_code_usage")
+}
+
+model ClaudeCodeApiKey {
+  id            String   @id @default(cuid())
+
+  // User relation (null = system default key)
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Encrypted API key
+  apiKey        String
+
+  // Key info
+  name          String   @default("Default")
+  isActive      Boolean  @default(true)
+
+  // Usage limits (monthly)
+  monthlyLimitCents  Int?     // null = unlimited
+  currentMonthCents  Int      @default(0)
+
+  // Last reset
+  lastResetAt   DateTime @default(now())
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("claude_code_api_keys")
+}
+
+// ==================== DOWNLOAD TOKENS ====================
+
+model DownloadToken {
+  id            String   @id @default(cuid())
+
+  // Token value (cryptographically secure random)
+  token         String   @unique
+
+  // User who requested the download
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Resource info
+  resourceType  String   // 'backup', 'file', 'export'
+  resourceId    String   // ID of the resource
+  filePath      String   // Path to the file
+
+  // Expiration
+  expiresAt     DateTime
+
+  // Single-use tracking
+  used          Boolean  @default(false)
+  usedAt        DateTime?
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("download_tokens")
+}
+
+// ==================== N8N AUTOMATION ====================
+
+model N8nConfig {
+  id              String   @id @default(cuid())
+  enabled         Boolean  @default(true)
+  autoStart       Boolean  @default(true)
+  backupEnabled   Boolean  @default(true)
+  backupSchedule  String   @default("0 3 * * *")  // Cron expression (3 AM daily)
+  retentionDays   Int      @default(30)
+  lastBackup      DateTime?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("n8n_config")
+}
+
+model N8nBackup {
+  id              String   @id @default(cuid())
+  filename        String
+  path            String
+  size            BigInt
+  workflows       Int      @default(0)
+  credentials     Int      @default(0)
+
+  // User who created the backup
+  createdBy       String
+  user            User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime @default(now())
+
+  @@index([createdBy])
+  @@index([createdAt])
+  @@map("n8n_backups")
+}
+
+// ==================== TEMPLATE LIBRARY ====================
+
+model Template {
+  id            String   @id @default(cuid())
+  name          String
+  description   String   @default("")
+  type          String   // html, component, spline, layout, section
+  category      String   // landing, dashboard, saas, portfolio, ecommerce, other
+  tags          String[] @default([])
+  thumbnail     String?
+  previewUrl    String?
+
+  // Files relation
+  files         TemplateFile[]
+  components    Component[]
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([type])
+  @@index([category])
+  @@index([createdAt])
+  @@map("templates")
+}
+
+model TemplateFile {
+  id            String   @id @default(cuid())
+  name          String
+  path          String
+  type          String   // MIME type
+  size          Int
+
+  // Template relation
+  templateId    String
+  template      Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt     DateTime @default(now())
+
+  @@index([templateId])
+  @@map("template_files")
+}
+
+
+
+// ==================== COMPONENT LIBRARY ====================
+
+model Component {
+  id            String   @id @default(cuid())
+  name          String
+  description   String   @default("")
+  type          String   // header, footer, hero, card, section, nav, form, modal, etc.
+  category      String   // ui, layout, feature, navigation, content
+  tags          String[] @default([])
+  
+  // Source info
+  sourceTemplateId String?
+  sourceTemplate   Template? @relation(fields: [sourceTemplateId], references: [id], onDelete: SetNull)
+  
+  // HTML content
+  html          String   @db.Text
+  css           String?  @db.Text
+  js            String?  @db.Text
+  
+  // Metadata
+  framework     String?  // bootstrap, tailwind, custom
+  responsive    Boolean  @default(true)
+  animated      Boolean  @default(false)
+  
+  // Preview
+  thumbnail     String?
+  previewHtml   String?  @db.Text
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([type])
+  @@index([category])
+  @@index([sourceTemplateId])
+  @@map("components")
+}

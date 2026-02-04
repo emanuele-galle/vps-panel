@@ -1,0 +1,15 @@
+# VPS Panel - Admin Dashboard
+# Block all search engine indexing
+
+User-agent: *
+Disallow: /
+
+# Block specific crawlers
+User-agent: Googlebot
+Disallow: /
+
+User-agent: Bingbot
+Disallow: /
+
+User-agent: Yandex
+Disallow: /

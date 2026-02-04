@@ -1,0 +1,96 @@
+# Fodi Platform - Traefik Routing
+# App: https://fodisrl.it (canonical)
+# Redirect: www.fodisrl.it → fodisrl.it (301)
+# Redirect: fodi.fodivps1.cloud → fodisrl.it (301)
+
+http:
+  routers:
+    # Router principale - dominio canonico
+    fodi-platform:
+      rule: "Host(`fodisrl.it`)"
+      entryPoints:
+        - websecure
+      service: fodi-platform
+      tls:
+        {}
+      middlewares:
+        - fodi-headers
+        - compress@file
+
+    # Redirect 301 da www a non-www (SEO: evita contenuti duplicati)
+    fodi-platform-www-redirect:
+      rule: "Host(`www.fodisrl.it`)"
+      entryPoints:
+        - websecure
+      service: noop@internal
+      tls:
+        {}
+      middlewares:
+        - fodi-www-to-apex
+
+    # Redirect 301 dal vecchio dominio
+    fodi-platform-redirect:
+      rule: "Host(`fodi.fodivps1.cloud`)"
+      entryPoints:
+        - websecure
+      service: noop@internal
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - fodi-redirect-to-production
+
+    fodi-storage:
+      rule: "Host(`storage.fodi.fodivps1.cloud`)"
+      entryPoints:
+        - websecure
+      service: fodi-minio
+      tls:
+        certResolver: letsencrypt
+
+    fodi-minio-console:
+      rule: "Host(`minio-fodi.fodivps1.cloud`)"
+      entryPoints:
+        - websecure
+      service: fodi-minio-console
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    fodi-platform:
+      loadBalancer:
+        servers:
+          - url: "http://172.19.0.1:3017"
+
+    fodi-minio:
+      loadBalancer:
+        servers:
+          - url: "http://172.19.0.1:9010"
+
+    fodi-minio-console:
+      loadBalancer:
+        servers:
+          - url: "http://172.19.0.1:9011"
+
+  middlewares:
+    fodi-headers:
+      headers:
+        sslRedirect: true
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        customFrameOptionsValue: "SAMEORIGIN"
+        contentTypeNosniff: true
+        browserXssFilter: true
+
+    # Redirect www → non-www (301 permanente)
+    fodi-www-to-apex:
+      redirectRegex:
+        regex: "^https://www\\.fodisrl\\.it/(.*)"
+        replacement: "https://fodisrl.it/${1}"
+        permanent: true
+
+    fodi-redirect-to-production:
+      redirectRegex:
+        regex: "^https://fodi\\.fodivps1\\.cloud/(.*)"
+        replacement: "https://fodisrl.it/${1}"
+        permanent: true

@@ -1,0 +1,72 @@
+http:
+  routers:
+    # Router principale - dominio produzione
+    gruppo-cestari:
+      rule: "Host(`gruppocestari.com`) || Host(`www.gruppocestari.com`)"
+      entryPoints:
+        - websecure
+      service: gruppo-cestari
+      tls:
+        {}
+      middlewares:
+        - cestari-headers
+        - cestari-www-redirect
+
+    gruppo-cestari-http:
+      rule: "Host(`gruppocestari.com`) || Host(`www.gruppocestari.com`)"
+      entryPoints:
+        - web
+      service: gruppo-cestari
+      middlewares:
+        - redirect-to-https
+
+    # Router fallback - dominio temporaneo (redirect a produzione)
+    gruppo-cestari-temp:
+      rule: "Host(`cestari.fodivps1.cloud`)"
+      entryPoints:
+        - websecure
+      service: gruppo-cestari
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - cestari-redirect-to-prod
+
+    gruppo-cestari-temp-http:
+      rule: "Host(`cestari.fodivps1.cloud`)"
+      entryPoints:
+        - web
+      service: gruppo-cestari
+      middlewares:
+        - redirect-to-https
+
+  services:
+    gruppo-cestari:
+      loadBalancer:
+        servers:
+          - url: "http://172.19.0.1:3016"
+
+  middlewares:
+    cestari-headers:
+      headers:
+        sslRedirect: true
+        stsSeconds: 31536000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        customFrameOptionsValue: "SAMEORIGIN"
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "strict-origin-when-cross-origin"
+        customResponseHeaders:
+          X-Robots-Tag: "index,follow"
+
+    cestari-www-redirect:
+      redirectRegex:
+        regex: "^https://www\\.gruppocestari\\.com/(.*)"
+        replacement: "https://gruppocestari.com/${1}"
+        permanent: true
+
+    cestari-redirect-to-prod:
+      redirectRegex:
+        regex: "^https://cestari\\.fodivps1\\.cloud/(.*)"
+        replacement: "https://gruppocestari.com/${1}"
+        permanent: true

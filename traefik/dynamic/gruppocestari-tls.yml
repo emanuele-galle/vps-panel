@@ -1,0 +1,7 @@
+# TLS Configuration for gruppocestari.com
+# Uses Cloudflare Origin Certificate
+
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/gruppocestari.com.pem
+      keyFile: /etc/traefik/certs/gruppocestari.com.key

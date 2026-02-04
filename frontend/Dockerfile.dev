@@ -1,0 +1,21 @@
+FROM node:20-alpine
+
+# Install dependencies for better compatibility
+RUN apk add --no-cache libc6-compat
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install ALL dependencies (including dev dependencies)
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Run Next.js in development mode
+CMD ["npm", "run", "dev"]

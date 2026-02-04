@@ -1,0 +1,34 @@
+# Template Traefik dynamic config per progetti ottimizzati
+# Salvare in: /root/vps-panel/traefik/dynamic/{{PROJECT_NAME}}.yml
+#
+# Sostituzioni:
+# - {{PROJECT_NAME}}: Nome progetto (es: notaio-pellicano)
+# - {{DOMAIN}}: Dominio completo (es: notaio.fodivps1.cloud)
+# - {{APP_PORT}}: Porta app PM2 (3010-3099)
+# - {{DOCKER_GATEWAY}}: IP gateway Docker (default: 172.19.0.1)
+
+http:
+  routers:
+    {{PROJECT_NAME}}:
+      rule: "Host(`{{DOMAIN}}`)"
+      entryPoints:
+        - websecure
+      service: {{PROJECT_NAME}}
+      tls:
+        certResolver: letsencrypt
+      middlewares:
+        - {{PROJECT_NAME}}-headers
+
+  services:
+    {{PROJECT_NAME}}:
+      loadBalancer:
+        servers:
+          - url: "http://{{DOCKER_GATEWAY}}:{{APP_PORT}}"
+
+  middlewares:
+    {{PROJECT_NAME}}-headers:
+      headers:
+        sslRedirect: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000

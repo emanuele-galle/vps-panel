@@ -1,0 +1,45 @@
+// Template PM2 ecosystem.config.js per progetti ottimizzati
+//
+// Sostituzioni:
+// - {{PROJECT_NAME}}: Nome processo PM2 (es: notaio-pellicano)
+// - {{PROJECT_PATH}}: Path progetto (es: /var/www/projects/import-xxx)
+// - {{APP_PORT}}: Porta app (3010-3099)
+// - {{DB_PORT}}: Porta database (3307 MySQL, 5433 PostgreSQL)
+// - {{DB_NAME}}: Nome database
+// - {{DB_USER}}: Utente database
+// - {{DB_PASSWORD}}: Password database
+// - {{DOMAIN}}: Dominio (es: notaio.fodivps1.cloud)
+
+module.exports = {
+  apps: [{
+    name: '{{PROJECT_NAME}}',
+    script: 'node_modules/.bin/next',
+    args: 'start',
+    cwd: '{{PROJECT_PATH}}',
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '512M',
+    env: {
+      NODE_ENV: 'production',
+      PORT: {{APP_PORT}},
+
+      // Database
+      DB_HOST: '127.0.0.1',
+      DB_PORT: {{DB_PORT}},
+      DB_NAME: '{{DB_NAME}}',
+      DB_USER: '{{DB_USER}}',
+      DB_PASSWORD: '{{DB_PASSWORD}}',
+
+      // App URLs
+      NEXT_PUBLIC_SITE_URL: 'https://{{DOMAIN}}',
+      NEXTAUTH_URL: 'https://{{DOMAIN}}',
+
+      // Secrets (generare con: openssl rand -base64 32)
+      NEXTAUTH_SECRET: '{{NEXTAUTH_SECRET}}',
+    },
+    error_file: '/var/log/pm2/{{PROJECT_NAME}}-error.log',
+    out_file: '/var/log/pm2/{{PROJECT_NAME}}-out.log',
+    log_date_format: 'YYYY-MM-DD HH:mm:ss Z'
+  }]
+};

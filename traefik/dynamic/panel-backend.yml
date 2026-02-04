@@ -1,0 +1,30 @@
+# VPS Panel Backend API
+http:
+  routers:
+    panel-backend-api:
+      rule: "Host(`api.fodivps1.cloud`)"
+      entryPoints:
+        - websecure
+      service: panel-backend-api
+      middlewares:
+        - security-headers
+        - compress
+      tls:
+        certResolver: letsencrypt
+
+    # WebSocket per Claude Code
+    panel-backend-ws:
+      rule: "Host(`api.fodivps1.cloud`) && PathPrefix(`/socket.io`)"
+      entryPoints:
+        - websecure
+      service: panel-backend-api
+      middlewares:
+        - security-headers
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    panel-backend-api:
+      loadBalancer:
+        servers:
+          - url: "http://vps-panel-backend:3001"

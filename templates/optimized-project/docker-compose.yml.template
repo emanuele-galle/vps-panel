@@ -1,0 +1,53 @@
+# Template docker-compose.yml per progetti ottimizzati
+# Solo database in Docker, app gestita da PM2
+#
+# Sostituzioni:
+# - {{PROJECT_NAME}}: Nome progetto (es: studio-notarile)
+# - {{DB_TYPE}}: mysql:8.0 o postgres:16
+# - {{DB_PORT}}: Porta host (3307-3399 MySQL, 5433-5499 PostgreSQL)
+# - {{DB_INTERNAL_PORT}}: 3306 per MySQL, 5432 per PostgreSQL
+# - {{DB_DATA_PATH}}: /var/lib/mysql o /var/lib/postgresql/data
+
+volumes:
+  db_data:
+    driver: local
+
+services:
+  database:
+    image: {{DB_TYPE}}
+    container_name: {{PROJECT_NAME}}_db
+    ports:
+      - "{{DB_PORT}}:{{DB_INTERNAL_PORT}}"
+    environment:
+      # Per MySQL
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+      - MYSQL_CHARSET=utf8mb4
+      - MYSQL_COLLATION=utf8mb4_unicode_ci
+      # Per PostgreSQL (commentare MySQL e scommentare questi)
+      # - POSTGRES_DB=${DB_NAME}
+      # - POSTGRES_USER=${DB_USER}
+      # - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - db_data:{{DB_DATA_PATH}}
+      # File di inizializzazione (opzionali)
+      # - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      # Per MySQL
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      # Per PostgreSQL
+      # test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command:
+      # Per MySQL
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max_connections=200
+      - --innodb_buffer_pool_size=256M

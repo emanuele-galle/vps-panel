@@ -1,0 +1,16 @@
+# Cloudflare Proxy Configuration
+# Configura Traefik per funzionare dietro Cloudflare
+
+http:
+  middlewares:
+    # Middleware per security headers CF-compatible
+    cloudflare-security:
+      headers:
+        browserXssFilter: true
+        contentTypeNosniff: true
+        frameDeny: false
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+        customResponseHeaders:
+          Server: ""

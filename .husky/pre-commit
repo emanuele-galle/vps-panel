@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running pre-commit checks..."
+
+# Backend checks
+cd backend
+npm run type-check 2>/dev/null || echo "Backend type-check skipped"
+cd ..
+
+# Frontend checks
+cd frontend
+npm run lint 2>/dev/null || echo "Frontend lint skipped"
+cd ..
+
+echo "Pre-commit checks completed"

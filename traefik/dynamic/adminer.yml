@@ -1,0 +1,15 @@
+http:
+  routers:
+    adminer:
+      rule: "Host(`adminer.fodivps1.cloud`)"
+      entryPoints:
+        - websecure
+      service: adminer
+      tls:
+        certResolver: letsencrypt
+
+  services:
+    adminer:
+      loadBalancer:
+        servers:
+          - url: "http://vps-panel-adminer:8080"

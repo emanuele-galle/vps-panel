@@ -1,0 +1,7 @@
+# TLS Configuration for fodisrl.it
+# Uses Cloudflare Origin Certificate
+
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/fodisrl.it.pem
+      keyFile: /etc/traefik/certs/fodisrl.it.key
