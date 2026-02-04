@@ -1,4 +1,4 @@
-FROM node:20-slim AS base
+FROM node:24-slim AS base
 
 # Runtime dependencies only
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -62,6 +62,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/prisma.config.ts ./
 
 # Regenerate Prisma client for this architecture
 RUN npx prisma generate
