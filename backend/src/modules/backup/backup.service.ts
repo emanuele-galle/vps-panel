@@ -12,6 +12,7 @@ import { dockerService } from '../docker/docker.service';
 import { safeExec, safePgDump } from '../../utils/shell-sanitizer';
 import { downloadTokenService } from '../../services/download-token.service';
 import log from '../../services/logger.service';
+import { notificationService } from '../../services/notification.service';
 
 const UPLOADS_DIR = process.env.UPLOADS_DIR || '/var/www/uploads';
 const PROJECTS_DIR = '/var/www/projects';
@@ -200,6 +201,22 @@ class BackupService {
         },
       });
 
+      // Notifica successo import
+      try {
+        await notificationService.create({
+          userId,
+          type: 'SUCCESS',
+          title: `Import completato: ${project.name}`,
+          message: `Il backup è stato importato e il progetto "${project.name}" è stato creato con successo.`,
+          actionLabel: 'Vai al progetto',
+          actionHref: `/dashboard/projects/${project.id}`,
+          source: 'backup-import',
+          sourceId: project.id,
+        });
+      } catch (notifErr) {
+        log.error('[Backup Import] Errore invio notifica:', notifErr);
+      }
+
       return project;
     } catch (error) {
       log.error('[Backup Import] Error:', error);
@@ -219,6 +236,21 @@ class BackupService {
           where: { id: project.id },
           data: { status: ProjectStatus.ERROR },
         }).catch(() => {});
+      }
+
+      // Notifica fallimento import
+      try {
+        await notificationService.create({
+          userId,
+          type: 'ERROR',
+          title: `Import fallito`,
+          message: `L'import del backup è fallito: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`,
+          priority: 'HIGH',
+          source: 'backup-import',
+          sourceId: backupId,
+        });
+      } catch (notifErr) {
+        log.error('[Backup Import] Errore invio notifica fallimento:', notifErr);
       }
 
       throw error;
@@ -426,6 +458,22 @@ class BackupService {
 
       log.info(`[Backup Export] ✅ Export completed: ${filename} (${this.formatBytes(stats.size)})`);
 
+      // Notifica successo export
+      try {
+        await notificationService.create({
+          userId,
+          type: 'SUCCESS',
+          title: `Backup completato: ${project.name}`,
+          message: `Export backup completato (${this.formatBytes(stats.size)}). Download disponibile per 30 minuti.`,
+          actionLabel: 'Vai ai backup',
+          actionHref: `/dashboard/backup`,
+          source: 'backup-export',
+          sourceId: backup.id,
+        });
+      } catch (notifErr) {
+        log.error('[Backup Export] Errore invio notifica:', notifErr);
+      }
+
       return {
         backup: {
           ...serializeBackup(backup),
@@ -437,6 +485,21 @@ class BackupService {
 
     } catch (error) {
       log.error('[Backup Export] Error:', error);
+
+      // Notifica fallimento export
+      try {
+        await notificationService.create({
+          userId,
+          type: 'ERROR',
+          title: `Backup fallito: ${project.name}`,
+          message: `Export backup fallito: ${error instanceof Error ? error.message : 'Errore sconosciuto'}`,
+          priority: 'HIGH',
+          source: 'backup-export',
+          sourceId: projectId,
+        });
+      } catch (notifErr) {
+        log.error('[Backup Export] Errore invio notifica fallimento:', notifErr);
+      }
 
       // Cleanup su errore
       try {

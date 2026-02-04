@@ -3,6 +3,7 @@ import { prisma } from '../../services/prisma.service';
 import { dockerService } from './docker.service';
 import log from '../../services/logger.service';
 import { ContainerStatus } from '@prisma/client';
+import { notificationService } from '../../services/notification.service';
 
 /**
  * Container Sync Scheduler
@@ -125,6 +126,8 @@ export class ContainerSchedulerService {
           });
 
           if (existingContainer) {
+            const previousStatus = existingContainer.status;
+
             // Aggiorna container esistente
             await prisma.container.update({
               where: { id: existingContainer.id },
@@ -139,6 +142,29 @@ export class ContainerSchedulerService {
                 updatedAt: new Date(),
               },
             });
+
+            // Notifica admin se il container è passato a EXITED o ERROR
+            if (
+              previousStatus === 'RUNNING' &&
+              (status === 'EXITED' || status === 'ERROR')
+            ) {
+              const statusLabel = status === 'ERROR' ? 'crash' : 'fermato';
+              try {
+                await notificationService.createForAdmins({
+                  type: 'ERROR',
+                  title: `Container ${statusLabel}: ${containerName}`,
+                  message: `Il container ${containerName} del progetto ${project.name} è passato da RUNNING a ${status}.`,
+                  actionLabel: 'Vai al progetto',
+                  actionHref: `/dashboard/projects/${project.id}`,
+                  priority: 'HIGH',
+                  source: 'container-scheduler',
+                  sourceId: existingContainer.id,
+                });
+              } catch (notifErr) {
+                log.error(`[Container Scheduler] Errore invio notifica:`, notifErr);
+              }
+            }
+
             updated++;
           } else {
             // Crea nuovo container
