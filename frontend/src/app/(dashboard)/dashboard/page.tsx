@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useMonitoringStore } from '@/store/monitoringStore';
 import { useProjectsStore } from '@/store/projectsStore';
 import { useDatabasesStore } from '@/store/databasesStore';
@@ -9,6 +9,11 @@ import { useContainersStore } from '@/store/containersStore';
 import { useAuthStore } from '@/store/authStore';
 import { MetricsChart } from '@/components/dashboard/MetricsChart';
 import { StatsCard, StatsCardSkeleton } from '@/components/dashboard/StatsCard';
+import { SystemHealthCard } from '@/components/dashboard/SystemHealthCard';
+import { RecentDeployments } from '@/components/dashboard/RecentDeployments';
+import { RecentNotifications } from '@/components/dashboard/RecentNotifications';
+import { monitoringApi } from '@/lib/api';
+import { notificationsApi } from '@/lib/notifications-api';
 import { formatBytes } from '@/lib/utils';
 import {
   Cpu,
@@ -220,6 +225,22 @@ export default function DashboardPage() {
   const { domains, fetchDomains } = useDomainsStore();
   const { containers, fetchContainers } = useContainersStore();
 
+  const [dashboardSummary, setDashboardSummary] = useState<any>(null);
+  const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
+
+  const fetchDashboardData = async () => {
+    try {
+      const [summaryRes, notifsRes] = await Promise.all([
+        monitoringApi.getDashboardSummary(),
+        notificationsApi.getAll({ limit: 5, unreadOnly: false }),
+      ]);
+      setDashboardSummary(summaryRes.data?.data || null);
+      setRecentNotifications(notifsRes.data?.data?.notifications || notifsRes.data?.data || []);
+    } catch {
+      // Silently fail - dashboard summary is optional
+    }
+  };
+
   useEffect(() => {
     fetchCurrentMetrics();
     fetchMetricsHistory(24);
@@ -227,11 +248,13 @@ export default function DashboardPage() {
     fetchDatabases();
     fetchDomains();
     fetchContainers(true);
+    fetchDashboardData();
 
     const interval = setInterval(() => {
       fetchCurrentMetrics();
       fetchProjects();
       fetchContainers(true);
+      fetchDashboardData();
     }, 30000);
 
     return () => clearInterval(interval);
@@ -392,6 +415,22 @@ export default function DashboardPage() {
           </Card>
         </motion.div>
       </motion.div>
+
+      {/* System Health Summary */}
+      {dashboardSummary?.systemHealth && (
+        <SystemHealthCard health={dashboardSummary.systemHealth} />
+      )}
+
+      {/* Recent Deployments + Notifications */}
+      {(dashboardSummary?.recentDeployments?.length > 0 || recentNotifications.length > 0) && (
+        <motion.div
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+          variants={staggerContainer}
+        >
+          <RecentDeployments deployments={dashboardSummary?.recentDeployments || []} />
+          <RecentNotifications notifications={recentNotifications} />
+        </motion.div>
+      )}
 
       {/* Quick Stats Row */}
       <motion.div

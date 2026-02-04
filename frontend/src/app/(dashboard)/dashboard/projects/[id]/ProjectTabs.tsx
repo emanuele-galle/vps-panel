@@ -18,6 +18,7 @@ import {
   Trash2,
   ExternalLink,
   Rocket,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -46,6 +47,7 @@ interface ProjectTabsProps {
   onDeleteFile: (filename: string) => void;
   onClearAllFiles: () => void;
   onCopy: (text: string, label: string) => void;
+  onRollback?: (deploymentId: string) => void;
 }
 
 export function ProjectTabs({
@@ -63,6 +65,7 @@ export function ProjectTabs({
   onDeleteFile,
   onClearAllFiles,
   onCopy,
+  onRollback,
 }: ProjectTabsProps) {
   const router = useRouter();
 
@@ -118,7 +121,7 @@ export function ProjectTabs({
       )}
 
       {activeTab === 'deployments' && (
-        <DeploymentsTabContent deployments={deployments} />
+        <DeploymentsTabContent deployments={deployments} onRollback={onRollback} />
       )}
 
       {activeTab === 'uploads' && (
@@ -304,7 +307,7 @@ function DatabasesTabContent({ projectDatabases, copiedText, onCopy }: {
   );
 }
 
-function DeploymentsTabContent({ deployments }: { deployments: any[] }) {
+function DeploymentsTabContent({ deployments, onRollback }: { deployments: any[]; onRollback?: (deploymentId: string) => void }) {
   const getDeployStatusBadge = (status: string) => {
     const map: Record<string, { variant: any; label: string }> = {
       SUCCESS: { variant: 'success', label: 'Completato' },
@@ -366,11 +369,23 @@ function DeploymentsTabContent({ deployments }: { deployments: any[] }) {
                       </p>
                     </div>
                   </div>
-                  {deploy.commitAfter && (
-                    <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
-                      {deploy.commitAfter.substring(0, 7)}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {deploy.commitAfter && (
+                      <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
+                        {deploy.commitAfter.substring(0, 7)}
+                      </span>
+                    )}
+                    {onRollback && deploy.status === 'SUCCESS' && deploy.commitBefore && deploy.gitBranch !== 'rollback' && (
+                      <button
+                        onClick={() => onRollback(deploy.id)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium bg-amber-600 hover:bg-amber-700 text-white rounded-md transition-colors"
+                        title={`Rollback al commit ${deploy.commitBefore?.substring(0, 7)}`}
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        Rollback
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {deploy.errorMessage && (
                   <div className="mt-2 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">

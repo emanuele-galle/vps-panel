@@ -6,6 +6,7 @@ export default async function deployRoutes(app: FastifyInstance) {
   app.addHook('preHandler', authenticate);
 
   app.post('/:id/deploy', deployController.startDeploy.bind(deployController));
+  app.post('/:id/deploy/rollback', deployController.rollbackDeploy.bind(deployController));
   app.get('/:id/deployments', deployController.getDeployments.bind(deployController));
   app.get('/:id/deployments/latest', deployController.getLatestDeployment.bind(deployController));
 }

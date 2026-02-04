@@ -153,6 +153,8 @@ export const monitoringApi = {
   getImagesStorage: () => api.get<ApiResponse>('/monitoring/disk/images'),
 
   getDatabasesStorage: () => api.get<ApiResponse>('/monitoring/disk/databases'),
+
+  getDashboardSummary: () => api.get<ApiResponse>('/monitoring/dashboard-summary'),
 };
 
 // Projects API
@@ -220,6 +222,9 @@ export const projectsApi = {
 
   getLatestDeployment: (id: string) =>
     api.get<ApiResponse>(`/projects/${id}/deployments/latest`),
+
+  rollbackDeploy: (id: string, deploymentId: string) =>
+    api.post<ApiResponse>(`/projects/${id}/deploy/rollback`, { deploymentId }),
 };
 
 // Docker/Containers API

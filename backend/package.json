@@ -1,6 +1,6 @@
 {
   "name": "vps-panel-backend",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "VPS Control Panel Backend API",
   "main": "dist/server.js",
   "scripts": {

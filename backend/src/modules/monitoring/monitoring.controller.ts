@@ -77,6 +77,19 @@ export class MonitoringController {
   }
 
   /**
+   * GET /api/monitoring/dashboard-summary
+   * Get dashboard summary with recent deploys and system health
+   */
+  async getDashboardSummary(request: FastifyRequest, reply: FastifyReply) {
+    const summary = await monitoringService.getDashboardSummary();
+
+    return reply.send({
+      success: true,
+      data: summary,
+    });
+  }
+
+  /**
    * GET /api/monitoring/disk
    * Get comprehensive disk metrics
    */

@@ -18,6 +18,7 @@ import authRoutes from './modules/auth/auth.routes';
 import monitoringRoutes from './modules/monitoring/monitoring.routes';
 import projectsRoutes from './modules/projects/projects.routes';
 import { projectsWsRoutes } from './modules/projects/projects.ws.routes';
+import { terminalWsRoutes } from './modules/docker/terminal.ws.routes';
 import { initProjectsWebSocket } from './modules/projects/projects.events';
 import dockerRoutes from './modules/docker/docker.routes';
 import domainsRoutes from './modules/domains/domains.routes';
@@ -161,7 +162,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       info: {
         title: 'VPS Console API',
         description: 'API per la gestione completa del pannello VPS - Progetti, Docker, Domini, Database, Backup, Sicurezza',
-        version: '1.6.0',
+        version: '1.7.0',
       },
       servers: [
         { url: 'https://api.fodivps1.cloud', description: 'Production' },
@@ -204,6 +205,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         { name: 'Maintenance', description: 'Manutenzione sistema' },
         { name: 'Deploy', description: 'Deploy progetti da Git' },
         { name: 'Notifications', description: 'Notifiche in-app' },
+        { name: 'Terminal', description: 'Web terminal per container Docker' },
       ],
     },
   });
@@ -308,6 +310,9 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // WebSocket routes for real-time updates
   await app.register(projectsWsRoutes);
+
+  // Terminal WebSocket routes
+  await app.register(terminalWsRoutes);
 
   // Initialize WebSocket handlers
   initProjectsWebSocket(app);

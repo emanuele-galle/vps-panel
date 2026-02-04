@@ -13,12 +13,15 @@ import {
   Network,
   Calendar,
   Activity,
+  TerminalSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { useContainersStore, getContainerStatus, getContainerStartedAt } from '@/store/containersStore';
+import { useAuthStore } from '@/store/authStore';
 import { dockerApi } from '@/lib/api';
+import { WebTerminal } from '@/components/terminal/WebTerminal';
 
 export default function ContainerDetailsPage() {
   const params = useParams();
@@ -38,10 +41,14 @@ export default function ContainerDetailsPage() {
     removeContainer,
   } = useContainersStore();
 
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN';
+
   const [actionLoading, setActionLoading] = useState(false);
   const [logs, setLogs] = useState<string>('');
   const [logsLoading, setLogsLoading] = useState(false);
   const [tailLines, setTailLines] = useState(100);
+  const [terminalOpen, setTerminalOpen] = useState(false);
 
   useEffect(() => {
     if (containerId) {
@@ -252,6 +259,15 @@ export default function ContainerDetailsPage() {
             <Button onClick={handleStart} disabled={actionLoading}>
               <Play className="h-4 w-4 mr-2" />
               Avvia
+            </Button>
+          )}
+          {isAdmin && containerState.toLowerCase() === 'running' && (
+            <Button
+              variant="outline"
+              onClick={() => setTerminalOpen(!terminalOpen)}
+            >
+              <TerminalSquare className="h-4 w-4 mr-2" />
+              Terminal
             </Button>
           )}
           <Button
@@ -472,6 +488,15 @@ export default function ContainerDetailsPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Web Terminal */}
+      {terminalOpen && containerState.toLowerCase() === 'running' && (
+        <WebTerminal
+          containerId={containerId}
+          containerName={containerName}
+          onClose={() => setTerminalOpen(false)}
+        />
       )}
 
       {/* Logs */}

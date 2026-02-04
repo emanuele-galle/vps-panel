@@ -99,6 +99,17 @@ export default async function monitoringRoutes(app: FastifyInstance) {
     handler: monitoringController.getContainerStats.bind(monitoringController),
   });
 
+  // Dashboard summary
+  app.get('/dashboard-summary', {
+    schema: {
+      tags: ['Monitoring'],
+      summary: 'Dashboard summary',
+      description: 'Restituisce un riepilogo per la dashboard: deploy recenti, salute sistema',
+      security: [{ bearerAuth: [] }, { cookieAuth: [] }],
+    },
+    handler: monitoringController.getDashboardSummary.bind(monitoringController),
+  });
+
   // Disk metrics routes
   app.get('/disk', {
     schema: {

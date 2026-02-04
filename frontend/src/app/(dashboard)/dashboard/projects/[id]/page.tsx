@@ -16,6 +16,7 @@ import { ProjectInfoCards } from './ProjectInfoCards';
 import { ProjectCredentials } from './ProjectCredentials';
 import { ProjectTabs, type TabType } from './ProjectTabs';
 import { DeployModal } from './DeployModal';
+import { WebTerminal } from '@/components/terminal/WebTerminal';
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -53,6 +54,8 @@ export default function ProjectDetailsPage() {
   const [deployDuration, setDeployDuration] = useState<number | null>(null);
   const [deployError, setDeployError] = useState<string | null>(null);
   const [deployments, setDeployments] = useState<any[]>([]);
+  const [terminalOpen, setTerminalOpen] = useState(false);
+  const [terminalContainerId, setTerminalContainerId] = useState<string | null>(null);
 
   const projectDatabases = databases.filter(db => db.projectId === projectId);
 
@@ -251,6 +254,45 @@ export default function ProjectDetailsPage() {
     }
   };
 
+  const handleOpenTerminal = () => {
+    // Find the main 'app' container for this project
+    const appContainer = currentProject?.containers?.find(
+      (c: any) => c.name?.includes('-app-') || c.name?.endsWith('-app')
+    );
+    const cId = appContainer?.dockerId || appContainer?.id;
+    if (cId) {
+      setTerminalContainerId(cId);
+      setTerminalOpen(true);
+    } else {
+      toast.error('Nessun container app trovato per questo progetto');
+    }
+  };
+
+  const handleRollback = async (deploymentId: string) => {
+    if (!confirm('Vuoi fare rollback a questo commit? Il codice attuale verrà sovrascritto.')) return;
+    setDeployLoading(true);
+    setDeployLogs([]);
+    setDeployStatus('PENDING');
+    setDeployCurrentStep(null);
+    setDeployDuration(null);
+    setDeployError(null);
+    setDeployModalOpen(true);
+
+    try {
+      const res = await projectsApi.rollbackDeploy(projectId, deploymentId);
+      const deployment = res.data?.data;
+      if (deployment?.id) {
+        setDeploymentId(deployment.id);
+      }
+    } catch (error: any) {
+      const msg = error?.response?.data?.error?.message || error.message || 'Errore avvio rollback';
+      toast.error('Errore avvio rollback', { description: msg });
+      setDeployError(msg);
+      setDeployStatus('FAILED');
+      setDeployLoading(false);
+    }
+  };
+
   const handleExportBackup = async () => {
     setExportLoading(true);
 
@@ -346,6 +388,7 @@ export default function ProjectDetailsPage() {
         onExportBackup={handleExportBackup}
         onDeploy={handleDeploy}
         onRefresh={() => fetchProject(projectId)}
+        onOpenTerminal={isAdmin ? handleOpenTerminal : undefined}
       />
 
       <ProjectInfoCards
@@ -379,7 +422,20 @@ export default function ProjectDetailsPage() {
         onDeleteFile={handleDeleteFile}
         onClearAllFiles={handleClearAllFiles}
         onCopy={handleCopy}
+        onRollback={handleRollback}
       />
+
+      {/* Web Terminal */}
+      {terminalOpen && terminalContainerId && (
+        <WebTerminal
+          containerId={terminalContainerId}
+          containerName={currentProject?.name}
+          onClose={() => {
+            setTerminalOpen(false);
+            setTerminalContainerId(null);
+          }}
+        />
+      )}
 
       <DeployModal
         open={deployModalOpen}

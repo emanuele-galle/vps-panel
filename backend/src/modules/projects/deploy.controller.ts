@@ -28,6 +28,32 @@ export class DeployController {
   }
 
   /**
+   * POST /api/projects/:id/deploy/rollback
+   */
+  async rollbackDeploy(request: FastifyRequest, reply: FastifyReply) {
+    const { userId, role } = request.user as JwtPayload;
+    const { id } = request.params as { id: string };
+    const { deploymentId } = (request.body as { deploymentId: string }) || {};
+
+    if (!deploymentId) {
+      return reply.status(400).send({ success: false, error: { code: 'BAD_REQUEST', message: 'deploymentId richiesto' } });
+    }
+
+    // Check project access
+    const hasAccess = await projectsService.canAccessProject(id, userId, role as UserRole);
+    if (!hasAccess) {
+      return reply.status(404).send({ success: false, error: { code: 'NOT_FOUND', message: 'Progetto non trovato' } });
+    }
+
+    try {
+      const deployment = await deployService.startRollback(id, deploymentId, userId);
+      return reply.status(201).send({ success: true, data: deployment });
+    } catch (error: any) {
+      return reply.status(409).send({ success: false, error: { code: 'ROLLBACK_ERROR', message: error.message } });
+    }
+  }
+
+  /**
    * GET /api/projects/:id/deployments
    */
   async getDeployments(request: FastifyRequest, reply: FastifyReply) {

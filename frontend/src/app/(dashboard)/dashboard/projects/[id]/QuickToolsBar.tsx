@@ -9,6 +9,7 @@ import {
   Settings,
   Loader2,
   Rocket,
+  TerminalSquare,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getFileBrowserUrl, getAdminerUrl } from './utils';
@@ -22,6 +23,7 @@ interface QuickToolsBarProps {
   onExportBackup: () => void;
   onDeploy: () => void;
   onRefresh: () => void;
+  onOpenTerminal?: () => void;
 }
 
 export function QuickToolsBar({
@@ -33,6 +35,7 @@ export function QuickToolsBar({
   onExportBackup,
   onDeploy,
   onRefresh,
+  onOpenTerminal,
 }: QuickToolsBarProps) {
   return (
     <div className="bg-gradient-to-r from-slate-800 to-slate-700 dark:from-slate-900 dark:to-slate-800 rounded-xl p-4 shadow-lg">
@@ -74,6 +77,16 @@ export function QuickToolsBar({
               <Database className="h-4 w-4" />
               Database
             </a>
+          )}
+
+          {onOpenTerminal && (
+            <button
+              onClick={onOpenTerminal}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-500 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              <TerminalSquare className="h-4 w-4" />
+              Terminal
+            </button>
           )}
 
           <button

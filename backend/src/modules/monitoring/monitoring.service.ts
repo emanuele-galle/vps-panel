@@ -709,6 +709,56 @@ export class MonitoringService {
   }
 
   /**
+   * Get dashboard summary: recent deployments + system health
+   */
+  async getDashboardSummary() {
+    const [metrics, recentDeployments] = await Promise.all([
+      this.getSystemMetrics(),
+      prisma.deployment.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          project: { select: { id: true, name: true } },
+          user: { select: { id: true, name: true, email: true } },
+        },
+      }),
+    ]);
+
+    // Determine overall health status
+    const cpuPercent = metrics.cpu;
+    const memPercent = metrics.memory.percentage;
+    const diskPercent = metrics.disk.percentage;
+
+    let status: 'healthy' | 'warning' | 'critical' = 'healthy';
+    if (cpuPercent >= 90 || memPercent >= 90 || diskPercent >= 95) {
+      status = 'critical';
+    } else if (cpuPercent >= 70 || memPercent >= 70 || diskPercent >= 85) {
+      status = 'warning';
+    }
+
+    return {
+      recentDeployments: recentDeployments.map((d) => ({
+        id: d.id,
+        projectName: d.project.name,
+        projectId: d.project.id,
+        status: d.status,
+        duration: d.duration,
+        commitAfter: d.commitAfter,
+        createdAt: d.createdAt,
+        userName: d.user?.name || d.user?.email || 'Sistema',
+      })),
+      systemHealth: {
+        status,
+        cpu: Math.round(cpuPercent * 10) / 10,
+        memory: Math.round(memPercent * 10) / 10,
+        disk: Math.round(diskPercent * 10) / 10,
+        containersRunning: metrics.docker.containersRunning,
+        containersTotal: metrics.docker.containersRunning + metrics.docker.containersStopped,
+      },
+    };
+  }
+
+  /**
    * Get comprehensive disk metrics
    */
   async getDiskMetrics() {
