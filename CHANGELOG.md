@@ -6,6 +6,72 @@ Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/)
 
 ---
 
+## [1.6.0] - 2026-02-04
+
+### Aggiunto
+
+- **Deploy da Git (1-Click)**: Pipeline completa di deploy per progetti Docker Compose
+  - Pulsante "Deploy" nella barra Strumenti Rapidi di ogni progetto
+  - Pipeline: `git pull` → `docker compose build --no-cache app` → `docker compose up -d app` → health check
+  - Log streaming in tempo reale via WebSocket (evento per evento)
+  - DeployModal con progress bar 4 step (Git Pull, Build, Deploy, Health Check)
+  - Tab "Deploy" con storico completo dei deploy (branch, commit, durata, stato)
+  - Health check automatico: polling container ogni 5s, timeout 2 minuti
+  - Backend: `deploy.service.ts`, `deploy.controller.ts`, `deploy.routes.ts`
+  - API: `POST /:id/deploy`, `GET /:id/deployments`, `GET /:id/deployments/latest`
+  - Prisma: model `Deployment` + enum `DeploymentStatus`
+
+- **Sistema Notifiche In-App**: Notifiche persistenti backend-driven
+  - Notifiche salvate su database PostgreSQL (non più localStorage)
+  - Badge unread count nel bell icon della navbar
+  - Dropdown con lista notifiche, mark as read, elimina, clear all
+  - Aggiornamenti real-time via WebSocket (`notification:new`, `notification:count`)
+  - Update ottimistico per UX istantanea
+  - Integrazione automatica:
+    - Deploy completato/fallito → notifica success/error
+    - Resource alerts (CPU/RAM/disco sopra soglia) → notifica warning
+  - Cleanup automatico notifiche lette >30 giorni
+  - Backend: `notification.service.ts` in `services/`, controller+routes in `modules/notifications/`
+  - API: `GET /notifications`, `GET /notifications/unread-count`, `PATCH /notifications/:id/read`, `PATCH /notifications/read-all`, `DELETE /notifications/:id`, `DELETE /notifications/clear`
+  - Prisma: model `Notification` + enum `NotificationType`, `NotificationPriority`
+
+- **Migrazione PM2 → Docker Compose**: Tutti i progetti cliente migrati
+  - 8 progetti migrati da PM2 a Docker Compose isolati
+  - Zero downtime durante la migrazione
+  - PM2 daemon rimosso completamente
+
+- **Routing Traefik via Docker Labels**: Sostituzione completa file YAML statici
+  - Tutti i file `traefik/dynamic/*.yml` di routing rimossi
+  - Routing configurato direttamente nei `docker-compose.yml` dei progetti tramite Docker labels
+  - Mantenuti solo: `middlewares.yml`, `tls.yml`, `cloudflare.yml`, file TLS per Origin Cert
+
+### Modificato
+
+- **NotificationDropdown**: Riscritto per usare API backend invece di localStorage
+  - Fetch notifiche on mount + WebSocket listener per aggiornamenti real-time
+  - Rimossa dipendenza `persist` middleware di Zustand
+- **notificationStore**: Riscritto completamente (API-backed Zustand)
+  - `fetchNotifications()`, `fetchUnreadCount()`, `markAsRead()`, `markAllAsRead()`, `removeNotification()`, `clearAll()`
+  - `addFromWebSocket()` per notifiche push in tempo reale
+- **useProjectsWebSocket**: Aggiunti handler per eventi deploy e notifiche
+  - `deploy:log`, `deploy:status`, `deploy:completed`
+  - `notification:new`, `notification:count`
+- **useSystemNotifications**: Semplificato, rimossa dipendenza `notify` helper
+- **projects.events.ts**: Aggiunti listener per broadcast WebSocket di deploy e notifiche
+- **app.ts**: Registrate route deploy e notifiche, aggiunto cleanup periodico notifiche
+- **resource-alerts.service.ts**: Integrata creazione notifiche in-app per admin su alert risorse
+- **QuickToolsBar**: Aggiunto pulsante Deploy (Rocket, indigo)
+- **ProjectTabs**: Aggiunto tab "Deploy" con storico deployment
+- **page.tsx (project detail)**: Gestione stato deploy, WebSocket hook, DeployModal
+
+### Tecnico
+- Prisma schema: +2 model (Deployment, Notification), +3 enum
+- Migrazione: `prisma db push` (no `migrate dev` per compatibilità Docker)
+- 8 nuovi file backend, 2 nuovi file frontend, 10 file modificati
+- WebSocket events: 5 nuovi (`deploy:log/status/completed`, `notification:new/count`)
+
+---
+
 ## [1.4.0] - 2026-01-10
 
 ### Rimosso
