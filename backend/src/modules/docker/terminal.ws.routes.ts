@@ -33,14 +33,14 @@ function extractTokenFromCookies(cookieHeader: string | undefined): string | nul
  * WebSocket routes for container terminal access
  */
 export async function terminalWsRoutes(app: FastifyInstance) {
-  app.get('/ws/terminal/:containerId', { websocket: true }, async (connection, req) => {
+  app.get('/ws/terminal/:containerId', { websocket: true }, async (socket, req) => {
     const containerId = (req.params as any).containerId;
 
     // 1. Authenticate via JWT cookie
     const token = extractTokenFromCookies(req.headers.cookie);
     if (!token) {
       log.warn('[Terminal WS] No auth token in cookies');
-      connection.socket.close(4001, 'Authentication required');
+      socket.close(4001, 'Authentication required');
       return;
     }
 
@@ -49,14 +49,14 @@ export async function terminalWsRoutes(app: FastifyInstance) {
       user = await verifyToken(token, app);
     } catch {
       log.warn('[Terminal WS] Invalid token');
-      connection.socket.close(4001, 'Invalid token');
+      socket.close(4001, 'Invalid token');
       return;
     }
 
     // 2. Only ADMIN can access terminal
     if (user.role !== 'ADMIN') {
       log.warn(`[Terminal WS] Non-admin user ${user.userId} tried to access terminal`);
-      connection.socket.close(4003, 'Admin access required');
+      socket.close(4003, 'Admin access required');
       return;
     }
 
@@ -64,7 +64,7 @@ export async function terminalWsRoutes(app: FastifyInstance) {
     const isRunning = await verifyContainer(containerId);
     if (!isRunning) {
       log.warn(`[Terminal WS] Container ${containerId} not found or not running`);
-      connection.socket.close(4004, 'Container not found or not running');
+      socket.close(4004, 'Container not found or not running');
       return;
     }
 
@@ -74,18 +74,18 @@ export async function terminalWsRoutes(app: FastifyInstance) {
       sessionId = terminalService.createSession(containerId, user.userId);
     } catch (err: any) {
       log.error(`[Terminal WS] Failed to create session:`, err);
-      connection.socket.close(4005, err.message || 'Failed to create terminal session');
+      socket.close(4005, err.message || 'Failed to create terminal session');
       return;
     }
 
     const session = terminalService.getSession(sessionId);
     if (!session) {
-      connection.socket.close(4005, 'Session creation failed');
+      socket.close(4005, 'Session creation failed');
       return;
     }
 
     // Send session info
-    connection.socket.send(JSON.stringify({
+    socket.send(JSON.stringify({
       type: 'connected',
       sessionId,
       containerId,
@@ -94,8 +94,8 @@ export async function terminalWsRoutes(app: FastifyInstance) {
     // 5. Pipe: pty.onData → ws.send
     session.ptyProcess.onData((data) => {
       try {
-        if (connection.socket.readyState === 1) {
-          connection.socket.send(JSON.stringify({ type: 'data', data }));
+        if (socket.readyState === 1) {
+          socket.send(JSON.stringify({ type: 'data', data }));
         }
       } catch (err) {
         log.error(`[Terminal WS] Error sending data to client:`, err);
@@ -105,12 +105,12 @@ export async function terminalWsRoutes(app: FastifyInstance) {
     // Handle PTY exit
     session.ptyProcess.onExit(({ exitCode }) => {
       try {
-        if (connection.socket.readyState === 1) {
-          connection.socket.send(JSON.stringify({
+        if (socket.readyState === 1) {
+          socket.send(JSON.stringify({
             type: 'exit',
             exitCode,
           }));
-          connection.socket.close(1000, 'Terminal process exited');
+          socket.close(1000, 'Terminal process exited');
         }
       } catch {
         // Connection already closed
@@ -119,7 +119,7 @@ export async function terminalWsRoutes(app: FastifyInstance) {
     });
 
     // 6. Pipe: ws.message → pty.write / resize
-    connection.socket.on('message', (message: Buffer) => {
+    socket.on('message', (message: Buffer) => {
       try {
         const msg = JSON.parse(message.toString());
 
@@ -135,12 +135,12 @@ export async function terminalWsRoutes(app: FastifyInstance) {
     });
 
     // 7. Cleanup on disconnect
-    connection.socket.on('close', () => {
+    socket.on('close', () => {
       log.info(`[Terminal WS] Client disconnected, destroying session ${sessionId}`);
       terminalService.destroy(sessionId);
     });
 
-    connection.socket.on('error', (err: Error) => {
+    socket.on('error', (err: Error) => {
       log.error(`[Terminal WS] Socket error for session ${sessionId}:`, err);
       terminalService.destroy(sessionId);
     });

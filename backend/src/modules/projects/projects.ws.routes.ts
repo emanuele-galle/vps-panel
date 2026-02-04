@@ -11,7 +11,7 @@ export async function projectsWsRoutes(app: FastifyInstance) {
     const wsHandler = getProjectsWebSocketHandler();
     
     if (!wsHandler) {
-      connection.socket.close(1011, 'WebSocket handler not initialized');
+      socket.close(1011, 'WebSocket handler not initialized');
       return;
     }
 
@@ -19,14 +19,14 @@ export async function projectsWsRoutes(app: FastifyInstance) {
     wsHandler.addGlobalClient(connection);
 
     // Handle incoming messages (for future use - subscriptions, filters, etc.)
-    connection.socket.on('message', (message: Buffer) => {
+    socket.on('message', (message: Buffer) => {
       try {
         const data = JSON.parse(message.toString());
         
         // Handle subscription to specific project
         if (data.type === 'subscribe' && data.projectId) {
           wsHandler.addClient(data.projectId, connection);
-          connection.socket.send(JSON.stringify({ 
+          socket.send(JSON.stringify({ 
             event: 'subscribed', 
             projectId: data.projectId 
           }));
@@ -35,7 +35,7 @@ export async function projectsWsRoutes(app: FastifyInstance) {
         // Handle unsubscription
         if (data.type === 'unsubscribe' && data.projectId) {
           wsHandler.removeClient(data.projectId, connection);
-          connection.socket.send(JSON.stringify({ 
+          socket.send(JSON.stringify({ 
             event: 'unsubscribed', 
             projectId: data.projectId 
           }));
@@ -46,13 +46,13 @@ export async function projectsWsRoutes(app: FastifyInstance) {
     });
 
     // Handle disconnection
-    connection.socket.on('close', () => {
+    socket.on('close', () => {
       log.info('[Projects WS] Global client disconnected');
       wsHandler.removeClient(null, connection);
     });
 
     // Send initial connection confirmation
-    connection.socket.send(JSON.stringify({ 
+    socket.send(JSON.stringify({ 
       event: 'connected', 
       timestamp: Date.now() 
     }));
@@ -64,20 +64,20 @@ export async function projectsWsRoutes(app: FastifyInstance) {
     const projectId = (_req.params as any)?.projectId;
     
     if (!wsHandler) {
-      connection.socket.close(1011, 'WebSocket handler not initialized');
+      socket.close(1011, 'WebSocket handler not initialized');
       return;
     }
 
     log.info(`[Projects WS] Client connected to project ${projectId}`);
     wsHandler.addClient(projectId, connection);
 
-    connection.socket.on('close', () => {
+    socket.on('close', () => {
       log.info(`[Projects WS] Client disconnected from project ${projectId}`);
       wsHandler.removeClient(projectId, connection);
     });
 
     // Send initial connection confirmation
-    connection.socket.send(JSON.stringify({ 
+    socket.send(JSON.stringify({ 
       event: 'connected', 
       projectId,
       timestamp: Date.now() 

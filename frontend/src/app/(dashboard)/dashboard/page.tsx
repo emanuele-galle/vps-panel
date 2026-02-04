@@ -422,15 +422,13 @@ export default function DashboardPage() {
       )}
 
       {/* Recent Deployments + Notifications */}
-      {(dashboardSummary?.recentDeployments?.length > 0 || recentNotifications.length > 0) && (
-        <motion.div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
-          variants={staggerContainer}
-        >
-          <RecentDeployments deployments={dashboardSummary?.recentDeployments || []} />
-          <RecentNotifications notifications={recentNotifications} />
-        </motion.div>
-      )}
+      <motion.div
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        variants={staggerContainer}
+      >
+        <RecentDeployments deployments={dashboardSummary?.recentDeployments || []} />
+        <RecentNotifications notifications={recentNotifications} />
+      </motion.div>
 
       {/* Quick Stats Row */}
       <motion.div

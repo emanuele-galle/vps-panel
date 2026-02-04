@@ -129,12 +129,19 @@ export default async function authRoutes(app: FastifyInstance) {
             data: {
               type: 'object',
               properties: {
-                id: { type: 'string' },
-                email: { type: 'string' },
-                username: { type: 'string' },
-                role: { type: 'string' },
-                twoFactorEnabled: { type: 'boolean' },
-                createdAt: { type: 'string', format: 'date-time' },
+                user: {
+                  type: 'object',
+                  properties: {
+                    id: { type: 'string' },
+                    email: { type: 'string' },
+                    name: { type: 'string' },
+                    role: { type: 'string' },
+                    isActive: { type: 'boolean' },
+                    twoFactorEnabled: { type: 'boolean' },
+                    createdAt: { type: 'string', format: 'date-time' },
+                    lastLoginAt: { type: 'string', format: 'date-time', nullable: true },
+                  },
+                },
               },
             },
           },

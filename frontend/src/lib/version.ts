@@ -1,5 +1,5 @@
 // Versione della VPS Console - Aggiornare ad ogni release
-export const VERSION = '1.6.0';
+export const VERSION = '1.7.0';
 export const VERSION_DATE = '2026-02-04';
 export const VERSION_NAME = 'FODI Console';
 
@@ -10,6 +10,35 @@ Tutte le modifiche significative al progetto VPS Panel saranno documentate in qu
 
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
+
+## [1.7.0] - 2026-02-04
+
+### Added
+- **Web Terminal** per container Docker
+  - Terminale interattivo via WebSocket + node-pty
+  - xterm.js v6 con FitAddon e WebLinksAddon
+  - Autenticazione JWT, solo ADMIN
+  - Max 5 sessioni, timeout inattivita 30 min
+  - Accessibile da dettaglio container e pagina progetto
+
+- **Dashboard Revamp**
+  - Nuovo widget System Health (healthy/warning/critical)
+  - Widget Deploy Recenti (ultimi 5 con status badge)
+  - Widget Notifiche Recenti (ultime 5 con indicatore non letto)
+  - Endpoint API \`GET /api/monitoring/dashboard-summary\`
+
+- **Deployment Rollback**
+  - Pulsante Rollback su deploy SUCCESS passati
+  - \`git reset --hard\` al commit precedente + docker rebuild
+  - Riutilizza DeployModal per progress real-time
+  - Endpoint \`POST /api/projects/:id/deploy/rollback\`
+
+### Changed
+- Migrazione completa PM2 → Docker Compose (tutti i progetti)
+- Routing Traefik: da file YAML statici a Docker container labels
+- Version bump da 1.6.0 a 1.7.0
+
+---
 
 ## [1.6.0] - 2026-02-04
 
@@ -130,7 +159,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
-## Stack Attuale (v1.6.0)
+## Stack Attuale (v1.7.0)
 
 **Frontend:**
 - Next.js 16.1.1 (App Router)
