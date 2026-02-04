@@ -75,12 +75,12 @@ export function ProjectInfoCards({ project, onSwitchToTeamTab }: ProjectInfoCard
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-muted-foreground">URL Anteprima</p>
                 <a
-                  href={`https://${project.previewUrl}`}
+                  href={project.previewUrl.startsWith('http') ? project.previewUrl : `https://${project.previewUrl}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline font-medium flex items-center gap-1 mt-1"
                 >
-                  <span className="truncate">{project.previewUrl}</span>
+                  <span className="truncate">{project.previewUrl.replace(/^https?:\/\//, '')}</span>
                   <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
                 </a>
               </div>

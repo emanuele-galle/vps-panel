@@ -9,6 +9,47 @@ import { UserRole } from '@prisma/client';
 const execAsync = promisify(exec);
 
 /**
+ * Strip Docker multiplexed stream headers from log output.
+ * Non-TTY containers return logs with 8-byte headers per frame:
+ * [stream_type(1) + padding(3) + size(4)] + payload
+ */
+function stripDockerHeaders(buffer: Buffer): string {
+  const lines: string[] = [];
+  let offset = 0;
+
+  while (offset < buffer.length) {
+    // Need at least 8 bytes for the header
+    if (offset + 8 > buffer.length) {
+      // Remaining bytes without valid header - append as-is
+      lines.push(buffer.subarray(offset).toString('utf8'));
+      break;
+    }
+
+    const streamType = buffer[offset];
+    // Docker stream types: 0=stdin, 1=stdout, 2=stderr
+    if (streamType > 2) {
+      // Not a valid Docker stream header — treat rest as raw text
+      lines.push(buffer.subarray(offset).toString('utf8'));
+      break;
+    }
+
+    const frameSize = buffer.readUInt32BE(offset + 4);
+    offset += 8;
+
+    if (offset + frameSize > buffer.length) {
+      // Truncated frame - take what we can
+      lines.push(buffer.subarray(offset).toString('utf8'));
+      break;
+    }
+
+    lines.push(buffer.subarray(offset, offset + frameSize).toString('utf8'));
+    offset += frameSize;
+  }
+
+  return lines.join('');
+}
+
+/**
  * VPS Console infrastructure container names that should always be hidden from STAFF users
  * These are system containers that manage the VPS Panel itself
  */
@@ -183,7 +224,7 @@ export class DockerService {
           });
 
           const containerName = containerInfo.Names?.[0]?.replace(/^\//, '') || containerInfo.Id.substring(0, 12);
-          const logString = logs.toString('utf8');
+          const logString = Buffer.isBuffer(logs) ? stripDockerHeaders(logs) : logs.toString('utf8');
 
           // Format logs with container name prefix
           return logString
@@ -437,7 +478,7 @@ export class DockerService {
         tail,
         timestamps: true,
       });
-      return logs.toString('utf-8');
+      return Buffer.isBuffer(logs) ? stripDockerHeaders(logs) : logs.toString('utf-8');
     } catch (error) {
       throw new Error(`Failed to get container logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

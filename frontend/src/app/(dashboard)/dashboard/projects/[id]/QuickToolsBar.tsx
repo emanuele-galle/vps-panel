@@ -47,7 +47,7 @@ export function QuickToolsBar({
         <div className="flex items-center gap-2 flex-wrap">
           {project.previewUrl && (
             <a
-              href={`https://${project.previewUrl}`}
+              href={project.previewUrl.startsWith('http') ? project.previewUrl : `https://${project.previewUrl}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 bg-success hover:bg-success/90 text-white rounded-lg transition-colors text-sm font-medium"
