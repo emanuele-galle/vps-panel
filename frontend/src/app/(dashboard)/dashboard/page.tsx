@@ -438,7 +438,7 @@ export default function DashboardPage() {
         <QuickStatCard
           title="Progetti"
           value={safeProjects.length}
-          subtitle={`${runningProjects} attivi`}
+          subtitle={`${runningProjects} ${runningProjects === 1 ? 'attivo' : 'attivi'}`}
           icon={FolderGit2}
           href="/dashboard/projects"
           colorScheme="blue"

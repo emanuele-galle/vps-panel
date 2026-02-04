@@ -5,7 +5,6 @@ import jwt from '@fastify/jwt';
 import cookie from '@fastify/cookie';
 import multipart from '@fastify/multipart';
 import websocket from '@fastify/websocket';
-import compress from '@fastify/compress';
 import swagger from '@fastify/swagger';
 import swaggerUI from '@fastify/swagger-ui';
 
@@ -149,12 +148,8 @@ export async function buildApp(): Promise<FastifyInstance> {
   // WebSocket plugin
   await app.register(websocket);
 
-  // Response compression (gzip/deflate/brotli)
-  await app.register(compress, {
-    global: true,
-    encodings: ['br', 'gzip', 'deflate'],
-    threshold: 1024, // Only compress responses > 1KB
-  });
+  // Compression handled by Traefik compress@file middleware
+  // (removed @fastify/compress to avoid double-compression with proxy)
 
   // OpenAPI/Swagger documentation
   await app.register(swagger, {

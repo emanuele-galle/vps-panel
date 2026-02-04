@@ -157,7 +157,7 @@ function ContainersTabContent({ project }: { project: any }) {
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-foreground">Container del Progetto</h3>
           <Badge variant="info">
-            {project.containers?.filter((c: any) => c.status === 'RUNNING').length || 0} / {project.containers?.length || 0} attivi
+            {(() => { const running = project.containers?.filter((c: any) => c.status === 'RUNNING').length || 0; return `${running} / ${project.containers?.length || 0} ${running === 1 ? 'attivo' : 'attivi'}`; })()}
           </Badge>
         </div>
       </CardHeader>

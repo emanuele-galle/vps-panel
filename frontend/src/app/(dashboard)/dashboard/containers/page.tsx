@@ -392,7 +392,7 @@ export default function ContainersPage() {
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-success">{runningInGroup} attivi</span>
+                      <span className="text-sm text-success">{runningInGroup} {runningInGroup === 1 ? 'attivo' : 'attivi'}</span>
                     </div>
                   </button>
 
