@@ -1,19 +1,21 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
-import { backupsApi } from '@/lib/api';
+import { backupsApi, projectsApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { useProjectsStore } from '@/store/projectsStore';
 import { useDatabasesStore } from '@/store/databasesStore';
 import { useAuthStore } from '@/store/authStore';
+import { useProjectsWebSocket } from '@/hooks/useProjectsWebSocket';
 import { ProjectHeader } from './ProjectHeader';
 import { QuickToolsBar } from './QuickToolsBar';
 import { ProjectInfoCards } from './ProjectInfoCards';
 import { ProjectCredentials } from './ProjectCredentials';
 import { ProjectTabs, type TabType } from './ProjectTabs';
+import { DeployModal } from './DeployModal';
 
 export default function ProjectDetailsPage() {
   const params = useParams();
@@ -42,16 +44,64 @@ export default function ProjectDetailsPage() {
   const [tempFiles, setTempFiles] = useState<any[]>([]);
   const [uploadLoading, setUploadLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [deployLoading, setDeployLoading] = useState(false);
+  const [deployModalOpen, setDeployModalOpen] = useState(false);
+  const [deploymentId, setDeploymentId] = useState<string | null>(null);
+  const [deployStatus, setDeployStatus] = useState<any>('PENDING');
+  const [deployCurrentStep, setDeployCurrentStep] = useState<string | null>(null);
+  const [deployLogs, setDeployLogs] = useState<string[]>([]);
+  const [deployDuration, setDeployDuration] = useState<number | null>(null);
+  const [deployError, setDeployError] = useState<string | null>(null);
+  const [deployments, setDeployments] = useState<any[]>([]);
 
   const projectDatabases = databases.filter(db => db.projectId === projectId);
+
+  const fetchDeployments = useCallback(async () => {
+    try {
+      const res = await projectsApi.getDeployments(projectId);
+      setDeployments(res.data?.data?.deployments || []);
+    } catch (err) {
+      console.error('Failed to fetch deployments:', err);
+    }
+  }, [projectId]);
+
+  useProjectsWebSocket({
+    projectId,
+    onDeployLog: (data) => {
+      if (data.deploymentId === deploymentId) {
+        setDeployLogs((prev) => [...prev, data.line]);
+      }
+    },
+    onDeployStatus: (data) => {
+      if (data.deploymentId === deploymentId || data.projectId === projectId) {
+        setDeployStatus(data.status);
+        setDeployCurrentStep(data.currentStep || null);
+      }
+    },
+    onDeployCompleted: (data) => {
+      if (data.deploymentId === deploymentId || data.projectId === projectId) {
+        setDeployStatus(data.status);
+        setDeployDuration(data.duration || null);
+        if (data.error) setDeployError(data.error);
+        setDeployLoading(false);
+        fetchDeployments();
+        if (data.status === 'SUCCESS') {
+          toast.success('Deploy completato con successo!');
+        } else {
+          toast.error('Deploy fallito', { description: data.error?.substring(0, 100) });
+        }
+      }
+    },
+  });
 
   useEffect(() => {
     if (projectId) {
       fetchProject(projectId);
       fetchDatabases({ projectId });
       fetchTempFiles();
+      fetchDeployments();
     }
-  }, [projectId, fetchProject, fetchDatabases]);
+  }, [projectId, fetchProject, fetchDatabases, fetchDeployments]);
 
   const fetchTempFiles = async () => {
     try {
@@ -176,6 +226,31 @@ export default function ProjectDetailsPage() {
     }
   };
 
+  const handleDeploy = async () => {
+    if (!confirm('Avviare il deploy per questo progetto?')) return;
+    setDeployLoading(true);
+    setDeployLogs([]);
+    setDeployStatus('PENDING');
+    setDeployCurrentStep(null);
+    setDeployDuration(null);
+    setDeployError(null);
+    setDeployModalOpen(true);
+
+    try {
+      const res = await projectsApi.deploy(projectId);
+      const deployment = res.data?.data;
+      if (deployment?.id) {
+        setDeploymentId(deployment.id);
+      }
+    } catch (error: any) {
+      const msg = error?.response?.data?.error || error.message || 'Errore avvio deploy';
+      toast.error('Errore avvio deploy', { description: msg });
+      setDeployError(msg);
+      setDeployStatus('FAILED');
+      setDeployLoading(false);
+    }
+  };
+
   const handleExportBackup = async () => {
     setExportLoading(true);
 
@@ -266,8 +341,10 @@ export default function ProjectDetailsPage() {
         project={currentProject}
         projectDatabases={projectDatabases}
         exportLoading={exportLoading}
+        deployLoading={deployLoading}
         isLoading={isLoading}
         onExportBackup={handleExportBackup}
+        onDeploy={handleDeploy}
         onRefresh={() => fetchProject(projectId)}
       />
 
@@ -291,6 +368,7 @@ export default function ProjectDetailsPage() {
         project={currentProject}
         projectId={projectId}
         projectDatabases={projectDatabases}
+        deployments={deployments}
         activeTab={activeTab}
         tempFiles={tempFiles}
         copiedText={copiedText}
@@ -301,6 +379,17 @@ export default function ProjectDetailsPage() {
         onDeleteFile={handleDeleteFile}
         onClearAllFiles={handleClearAllFiles}
         onCopy={handleCopy}
+      />
+
+      <DeployModal
+        open={deployModalOpen}
+        onClose={() => setDeployModalOpen(false)}
+        deploymentId={deploymentId}
+        status={deployStatus}
+        currentStep={deployCurrentStep}
+        logs={deployLogs}
+        duration={deployDuration}
+        error={deployError}
       />
     </div>
   );

@@ -36,6 +36,8 @@ import { securityRoutes } from './modules/security/security.routes';
 import gdriveBackupRoutes from './modules/backup/gdrive-backup.routes';
 import healthRoutes from './modules/health/health.routes';
 import { maintenanceRoutes } from './modules/maintenance/maintenance.routes';
+import deployRoutes from './modules/projects/deploy.routes';
+import notificationRoutes from './modules/notifications/notification.routes';
 
 export async function buildApp(): Promise<FastifyInstance> {
   const app = Fastify({
@@ -200,6 +202,8 @@ export async function buildApp(): Promise<FastifyInstance> {
         { name: 'Security', description: 'Sicurezza e firewall' },
         { name: 'Health', description: 'Health check e diagnostica' },
         { name: 'Maintenance', description: 'Manutenzione sistema' },
+        { name: 'Deploy', description: 'Deploy progetti da Git' },
+        { name: 'Notifications', description: 'Notifiche in-app' },
       ],
     },
   });
@@ -297,6 +301,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(healthRoutes, { prefix: '/api/health' });
   // Maintenance routes
   await app.register(maintenanceRoutes, { prefix: '/api/maintenance' });
+  // Deploy routes (nested under projects)
+  await app.register(deployRoutes, { prefix: '/api/projects' });
+  // Notification routes
+  await app.register(notificationRoutes, { prefix: '/api/notifications' });
 
   // WebSocket routes for real-time updates
   await app.register(projectsWsRoutes);
@@ -349,6 +357,16 @@ export async function buildApp(): Promise<FastifyInstance> {
   } catch (err) {
     app.log.error({ err }, 'Failed to save initial metrics snapshot');
   }
+
+  // Periodic notification cleanup (daily at startup + every 24h)
+  const { notificationService } = await import('./services/notification.service');
+  setInterval(async () => {
+    try {
+      await notificationService.cleanupOld(30);
+    } catch (err) {
+      app.log.error({ err }, 'Failed to cleanup old notifications');
+    }
+  }, 24 * 60 * 60 * 1000); // Every 24 hours
 
   return app;
 }

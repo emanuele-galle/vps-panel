@@ -8,6 +8,7 @@ import { telegramService } from './telegram.service';
 import { prisma } from './prisma.service';
 import { safeExec } from '../utils/shell-sanitizer';
 import log from '../services/logger.service';
+import { notificationService } from './notification.service';
 
 export interface AlertThresholds {
   cpuPercent: number;
@@ -154,6 +155,21 @@ class ResourceAlertsService {
       });
     } catch (err) {
       log.error('[ResourceAlerts] Failed to log activity:', (err as Error).message);
+    }
+    // In-app notification for admins
+    try {
+      await notificationService.createForAdmins({
+        type: 'WARNING',
+        title: `${typeNames[type]} elevato: ${currentStr}%`,
+        message: `Uso ${typeNames[type]} al ${currentStr}% (soglia: ${threshold}%). ${detailsStr.replace(/\n/g, ', ')}`,
+        priority: 'HIGH',
+        source: 'resource-alerts',
+        sourceId: type,
+        actionLabel: 'Monitoraggio',
+        actionHref: '/dashboard/monitoring',
+      });
+    } catch (err) {
+      log.error('[ResourceAlerts] Failed to create notification:', (err as Error).message);
     }
     log.info('[ResourceAlerts] Alert sent: ' + type + ' at ' + currentStr + '%');
   }

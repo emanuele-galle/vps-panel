@@ -210,6 +210,16 @@ export const projectsApi = {
 
   // Sync credentials from vps-credentials.json file in project root
   syncCredentials: (id: string) => api.post<ApiResponse>(`/projects/${id}/sync-credentials`),
+
+  // Deploy
+  deploy: (id: string, branch?: string) =>
+    api.post<ApiResponse>(`/projects/${id}/deploy`, { branch }),
+
+  getDeployments: (id: string, params?: { limit?: number; offset?: number }) =>
+    api.get<ApiResponse>(`/projects/${id}/deployments`, { params }),
+
+  getLatestDeployment: (id: string) =>
+    api.get<ApiResponse>(`/projects/${id}/deployments/latest`),
 };
 
 // Docker/Containers API

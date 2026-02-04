@@ -31,6 +31,8 @@ model User {
   projectMemberships ProjectMember[] // Projects this user is a member of
   activityLogs  ActivityLog[]
   backupUploads BackupUpload[]
+  deployments   Deployment[]
+  notifications Notification[]
 
   // Claude Code relations
   claudeCodeSessions ClaudeCodeSession[]
@@ -135,6 +137,7 @@ model Project {
   networks      Network[]
   databases     Database[]
   backups       BackupUpload[]
+  deployments   Deployment[]
   fileBrowser   FileBrowserInstance?
 
   // Claude Code
@@ -861,4 +864,75 @@ model Component {
   @@index([category])
   @@index([sourceTemplateId])
   @@map("components")
+}
+
+// ==================== DEPLOYMENTS ====================
+
+model Deployment {
+  id            String           @id @default(cuid())
+  projectId     String
+  project       Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User             @relation(fields: [userId], references: [id])
+  status        DeploymentStatus @default(PENDING)
+  gitBranch     String?
+  commitBefore  String?
+  commitAfter   String?
+  commitMessage String?
+  logs          String           @db.Text @default("")
+  currentStep   String?
+  duration      Int?
+  errorMessage  String?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime         @default(now())
+
+  @@index([projectId, createdAt(sort: Desc)])
+  @@map("deployments")
+}
+
+enum DeploymentStatus {
+  PENDING
+  GIT_PULLING
+  BUILDING
+  DEPLOYING
+  HEALTH_CHECK
+  SUCCESS
+  FAILED
+}
+
+// ==================== NOTIFICATIONS ====================
+
+model Notification {
+  id          String               @id @default(cuid())
+  userId      String
+  user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        NotificationType
+  title       String
+  message     String               @db.Text
+  actionLabel String?
+  actionHref  String?
+  priority    NotificationPriority @default(NORMAL)
+  read        Boolean              @default(false)
+  source      String?
+  sourceId    String?
+  createdAt   DateTime             @default(now())
+  readAt      DateTime?
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
+}
+
+enum NotificationPriority {
+  LOW
+  NORMAL
+  HIGH
 }

@@ -20,6 +20,11 @@ interface UseProjectsWebSocketOptions {
   onStatusChanged?: (data: any) => void;
   onCredentialsSynced?: (data: any) => void;
   onContainerStatusChanged?: (data: any) => void;
+  onDeployLog?: (data: any) => void;
+  onDeployStatus?: (data: any) => void;
+  onDeployCompleted?: (data: any) => void;
+  onNotificationNew?: (data: any) => void;
+  onNotificationCount?: (data: any) => void;
 }
 
 export function useProjectsWebSocket(options: UseProjectsWebSocketOptions = {}) {
@@ -130,6 +135,29 @@ export function useProjectsWebSocket(options: UseProjectsWebSocketOptions = {}) 
         if (options.projectId && message.data.projectId === options.projectId) {
           fetchProject(options.projectId);
         }
+        break;
+
+      case 'deploy:log':
+        options.onDeployLog?.(message.data);
+        break;
+
+      case 'deploy:status':
+        options.onDeployStatus?.(message.data);
+        break;
+
+      case 'deploy:completed':
+        options.onDeployCompleted?.(message.data);
+        if (options.projectId && message.data.projectId === options.projectId) {
+          fetchProject(options.projectId);
+        }
+        break;
+
+      case 'notification:new':
+        options.onNotificationNew?.(message.data);
+        break;
+
+      case 'notification:count':
+        options.onNotificationCount?.(message.data);
         break;
 
       default:

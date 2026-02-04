@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -28,6 +28,7 @@ import {
   Notification,
   NotificationType,
 } from '@/store/notificationStore';
+import { useProjectsWebSocket } from '@/hooks/useProjectsWebSocket';
 
 const typeConfig: Record<NotificationType, { icon: typeof Info; color: string }> = {
   info: { icon: Info, color: 'text-primary' },
@@ -77,19 +78,19 @@ function NotificationItem({
         </p>
         <div className="flex items-center justify-between mt-2">
           <span className="text-[10px] text-muted-foreground/70">
-            {formatDistanceToNow(new Date(notification.timestamp), {
+            {formatDistanceToNow(new Date(notification.createdAt), {
               addSuffix: true,
               locale: it,
             })}
           </span>
-          {notification.action && (
+          {notification.actionLabel && notification.actionHref && (
             <Button
               variant="link"
               size="sm"
               className="h-auto p-0 text-xs text-primary"
               onClick={onAction}
             >
-              {notification.action.label}
+              {notification.actionLabel}
             </Button>
           )}
         </div>
@@ -136,15 +137,37 @@ export function NotificationDropdown() {
   const {
     notifications,
     unreadCount,
+    fetchNotifications,
+    fetchUnreadCount,
     markAsRead,
     markAllAsRead,
     removeNotification,
     clearAll,
+    addFromWebSocket,
+    setUnreadCount,
   } = useNotificationStore();
 
+  // Fetch on mount
+  useEffect(() => {
+    fetchNotifications();
+    fetchUnreadCount();
+  }, [fetchNotifications, fetchUnreadCount]);
+
+  // WebSocket for real-time updates
+  useProjectsWebSocket({
+    onNotificationNew: (data) => {
+      addFromWebSocket(data);
+    },
+    onNotificationCount: (data) => {
+      if (data.userId && data.count !== undefined) {
+        setUnreadCount(data.count);
+      }
+    },
+  });
+
   const handleAction = (notification: Notification) => {
-    if (notification.action?.href) {
-      router.push(notification.action.href);
+    if (notification.actionHref) {
+      router.push(notification.actionHref);
       setOpen(false);
     }
     if (!notification.read) {

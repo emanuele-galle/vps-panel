@@ -17,6 +17,7 @@ import {
   X,
   Trash2,
   ExternalLink,
+  Rocket,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,14 +25,17 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { LogsViewer } from '@/components/dashboard/LogsViewer';
 import { ProjectMembersTab } from '@/components/projects/ProjectMembersTab';
 import { EnvironmentVariablesTab } from '@/components/projects/EnvironmentVariablesTab';
+import { formatDistanceToNow } from 'date-fns';
+import { it } from 'date-fns/locale';
 import { getStatusVariant, getFileIcon, formatFileSize, getAdminerUrl } from './utils';
 
-export type TabType = 'logs' | 'containers' | 'databases' | 'uploads' | 'team' | 'env';
+export type TabType = 'logs' | 'containers' | 'databases' | 'deployments' | 'uploads' | 'team' | 'env';
 
 interface ProjectTabsProps {
   project: any;
   projectId: string;
   projectDatabases: any[];
+  deployments: any[];
   activeTab: TabType;
   tempFiles: any[];
   copiedText: string | null;
@@ -48,6 +52,7 @@ export function ProjectTabs({
   project,
   projectId,
   projectDatabases,
+  deployments,
   activeTab,
   tempFiles,
   copiedText,
@@ -65,6 +70,7 @@ export function ProjectTabs({
     { key: 'logs', label: 'Logs', icon: Terminal },
     { key: 'containers', label: `Container (${project.containers?.length || 0})`, icon: Box },
     { key: 'databases', label: `Database (${projectDatabases.length})`, icon: Database },
+    { key: 'deployments', label: `Deploy (${deployments.length})`, icon: Rocket },
     { key: 'uploads', label: `Upload Temp (${tempFiles.length})`, icon: Upload },
     { key: 'team', label: `Team (${project.members?.length || 0})`, icon: Users },
     { key: 'env', label: 'Variabili Env', icon: Settings },
@@ -109,6 +115,10 @@ export function ProjectTabs({
 
       {activeTab === 'databases' && (
         <DatabasesTabContent projectDatabases={projectDatabases} copiedText={copiedText} onCopy={onCopy} />
+      )}
+
+      {activeTab === 'deployments' && (
+        <DeploymentsTabContent deployments={deployments} />
       )}
 
       {activeTab === 'uploads' && (
@@ -287,6 +297,94 @@ function DatabasesTabContent({ projectDatabases, copiedText, onCopy }: {
             <Button variant="outline" size="sm" className="mt-3" onClick={() => router.push('/dashboard/databases')}>
               Crea Database
             </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function DeploymentsTabContent({ deployments }: { deployments: any[] }) {
+  const getDeployStatusBadge = (status: string) => {
+    const map: Record<string, { variant: any; label: string }> = {
+      SUCCESS: { variant: 'success', label: 'Completato' },
+      FAILED: { variant: 'destructive', label: 'Fallito' },
+      PENDING: { variant: 'default', label: 'In attesa' },
+      GIT_PULLING: { variant: 'info', label: 'Git Pull' },
+      BUILDING: { variant: 'info', label: 'Build' },
+      DEPLOYING: { variant: 'info', label: 'Deploy' },
+      HEALTH_CHECK: { variant: 'info', label: 'Health Check' },
+    };
+    const entry = map[status] || { variant: 'default', label: status };
+    return <Badge variant={entry.variant}>{entry.label}</Badge>;
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-foreground">Storico Deploy</h3>
+          <Badge variant="info">{deployments.length} deploy</Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {deployments.length > 0 ? (
+          <div className="space-y-3">
+            {deployments.map((deploy) => (
+              <div key={deploy.id} className="bg-muted/50 rounded-lg p-4 border border-border">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${
+                      deploy.status === 'SUCCESS' ? 'bg-success/15' :
+                      deploy.status === 'FAILED' ? 'bg-destructive/15' :
+                      'bg-blue-500/15'
+                    }`}>
+                      <Rocket className={`h-5 w-5 ${
+                        deploy.status === 'SUCCESS' ? 'text-success' :
+                        deploy.status === 'FAILED' ? 'text-destructive' :
+                        'text-blue-500'
+                      }`} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        {getDeployStatusBadge(deploy.status)}
+                        {deploy.gitBranch && (
+                          <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-0.5 rounded">
+                            {deploy.gitBranch}
+                          </span>
+                        )}
+                      </div>
+                      {deploy.commitMessage && (
+                        <p className="text-sm text-foreground mt-1 truncate max-w-md">
+                          {deploy.commitMessage}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {deploy.user?.name || deploy.user?.email || 'Sistema'} &middot;{' '}
+                        {formatDistanceToNow(new Date(deploy.createdAt), { addSuffix: true, locale: it })}
+                        {deploy.duration != null && ` &middot; ${deploy.duration}s`}
+                      </p>
+                    </div>
+                  </div>
+                  {deploy.commitAfter && (
+                    <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
+                      {deploy.commitAfter.substring(0, 7)}
+                    </span>
+                  )}
+                </div>
+                {deploy.errorMessage && (
+                  <div className="mt-2 text-sm text-destructive bg-destructive/10 px-3 py-2 rounded">
+                    {deploy.errorMessage.substring(0, 200)}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            <Rocket className="h-12 w-12 mx-auto mb-3 opacity-50" />
+            <p>Nessun deploy effettuato</p>
+            <p className="text-sm mt-2">Usa il pulsante Deploy negli Strumenti Rapidi per avviare un deploy</p>
           </div>
         )}
       </CardContent>

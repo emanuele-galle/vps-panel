@@ -8,6 +8,7 @@ import {
   RefreshCw,
   Settings,
   Loader2,
+  Rocket,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getFileBrowserUrl, getAdminerUrl } from './utils';
@@ -16,8 +17,10 @@ interface QuickToolsBarProps {
   project: any;
   projectDatabases: any[];
   exportLoading: boolean;
+  deployLoading: boolean;
   isLoading: boolean;
   onExportBackup: () => void;
+  onDeploy: () => void;
   onRefresh: () => void;
 }
 
@@ -25,8 +28,10 @@ export function QuickToolsBar({
   project,
   projectDatabases,
   exportLoading,
+  deployLoading,
   isLoading,
   onExportBackup,
+  onDeploy,
   onRefresh,
 }: QuickToolsBarProps) {
   return (
@@ -70,6 +75,19 @@ export function QuickToolsBar({
               Database
             </a>
           )}
+
+          <button
+            onClick={onDeploy}
+            disabled={deployLoading}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white rounded-lg transition-colors text-sm font-medium"
+          >
+            {deployLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Rocket className="h-4 w-4" />
+            )}
+            {deployLoading ? 'Deploying...' : 'Deploy'}
+          </button>
 
           <button
             onClick={onExportBackup}

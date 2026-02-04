@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { notificationsApi } from '@/lib/notifications-api';
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error';
 
@@ -10,96 +10,143 @@ export interface Notification {
   type: NotificationType;
   title: string;
   message: string;
-  timestamp: Date;
+  createdAt: string;
   read: boolean;
-  action?: {
-    label: string;
-    href: string;
-  };
+  actionLabel?: string;
+  actionHref?: string;
+  priority?: string;
+  source?: string;
+  sourceId?: string;
+  readAt?: string | null;
 }
 
 interface NotificationState {
   notifications: Notification[];
   unreadCount: number;
-  addNotification: (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void;
-  markAsRead: (id: string) => void;
-  markAllAsRead: () => void;
-  removeNotification: (id: string) => void;
-  clearAll: () => void;
+  isLoading: boolean;
+  fetchNotifications: () => Promise<void>;
+  fetchUnreadCount: () => Promise<void>;
+  markAsRead: (id: string) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
+  removeNotification: (id: string) => Promise<void>;
+  clearAll: () => Promise<void>;
+  addFromWebSocket: (notification: Notification) => void;
+  setUnreadCount: (count: number) => void;
 }
 
-export const useNotificationStore = create<NotificationState>()(
-  persist(
-    (set, get) => ({
-      notifications: [],
-      unreadCount: 0,
+function normalizeType(type: string): NotificationType {
+  const lower = type.toLowerCase();
+  if (lower === 'info' || lower === 'success' || lower === 'warning' || lower === 'error') {
+    return lower;
+  }
+  return 'info';
+}
 
-      addNotification: (notification) => {
-        const newNotification: Notification = {
-          ...notification,
-          id: crypto.randomUUID(),
-          timestamp: new Date(),
-          read: false,
-        };
+function normalizeNotification(n: any): Notification {
+  return {
+    ...n,
+    type: normalizeType(n.type),
+  };
+}
 
-        set((state) => {
-          // Keep only last 50 notifications
-          const notifications = [newNotification, ...state.notifications].slice(0, 50);
-          const unreadCount = notifications.filter((n) => !n.read).length;
-          return { notifications, unreadCount };
-        });
-      },
+export const useNotificationStore = create<NotificationState>()((set, get) => ({
+  notifications: [],
+  unreadCount: 0,
+  isLoading: false,
 
-      markAsRead: (id) => {
-        set((state) => {
-          const notifications = state.notifications.map((n) =>
-            n.id === id ? { ...n, read: true } : n
-          );
-          const unreadCount = notifications.filter((n) => !n.read).length;
-          return { notifications, unreadCount };
-        });
-      },
-
-      markAllAsRead: () => {
-        set((state) => ({
-          notifications: state.notifications.map((n) => ({ ...n, read: true })),
-          unreadCount: 0,
-        }));
-      },
-
-      removeNotification: (id) => {
-        set((state) => {
-          const notifications = state.notifications.filter((n) => n.id !== id);
-          const unreadCount = notifications.filter((n) => !n.read).length;
-          return { notifications, unreadCount };
-        });
-      },
-
-      clearAll: () => {
-        set({ notifications: [], unreadCount: 0 });
-      },
-    }),
-    {
-      name: 'vps-notifications',
-      partialize: (state) => ({
-        notifications: state.notifications.slice(0, 20), // Persist only last 20
-      }),
+  fetchNotifications: async () => {
+    set({ isLoading: true });
+    try {
+      const res = await notificationsApi.getAll({ limit: 50 });
+      const items = (res.data?.data?.notifications || []).map(normalizeNotification);
+      set({
+        notifications: items,
+        unreadCount: items.filter((n: Notification) => !n.read).length,
+        isLoading: false,
+      });
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+      set({ isLoading: false });
     }
-  )
-);
+  },
 
-// Helper function to add notifications from anywhere
-export const notify = {
-  info: (title: string, message: string, action?: Notification['action']) => {
-    useNotificationStore.getState().addNotification({ type: 'info', title, message, action });
+  fetchUnreadCount: async () => {
+    try {
+      const res = await notificationsApi.getUnreadCount();
+      set({ unreadCount: res.data?.data?.count || 0 });
+    } catch (err) {
+      console.error('Failed to fetch unread count:', err);
+    }
   },
-  success: (title: string, message: string, action?: Notification['action']) => {
-    useNotificationStore.getState().addNotification({ type: 'success', title, message, action });
+
+  markAsRead: async (id: string) => {
+    // Optimistic update
+    set((state) => ({
+      notifications: state.notifications.map((n) =>
+        n.id === id ? { ...n, read: true, readAt: new Date().toISOString() } : n
+      ),
+      unreadCount: Math.max(0, state.unreadCount - (state.notifications.find((n) => n.id === id && !n.read) ? 1 : 0)),
+    }));
+    try {
+      await notificationsApi.markAsRead(id);
+    } catch (err) {
+      console.error('Failed to mark as read:', err);
+      // Revert on error
+      get().fetchNotifications();
+    }
   },
-  warning: (title: string, message: string, action?: Notification['action']) => {
-    useNotificationStore.getState().addNotification({ type: 'warning', title, message, action });
+
+  markAllAsRead: async () => {
+    set((state) => ({
+      notifications: state.notifications.map((n) => ({ ...n, read: true, readAt: new Date().toISOString() })),
+      unreadCount: 0,
+    }));
+    try {
+      await notificationsApi.markAllAsRead();
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
+      get().fetchNotifications();
+    }
   },
-  error: (title: string, message: string, action?: Notification['action']) => {
-    useNotificationStore.getState().addNotification({ type: 'error', title, message, action });
+
+  removeNotification: async (id: string) => {
+    const removed = get().notifications.find((n) => n.id === id);
+    set((state) => ({
+      notifications: state.notifications.filter((n) => n.id !== id),
+      unreadCount: Math.max(0, state.unreadCount - (removed && !removed.read ? 1 : 0)),
+    }));
+    try {
+      await notificationsApi.delete(id);
+    } catch (err) {
+      console.error('Failed to delete notification:', err);
+      get().fetchNotifications();
+    }
   },
-};
+
+  clearAll: async () => {
+    set({ notifications: [], unreadCount: 0 });
+    try {
+      await notificationsApi.clearAll();
+    } catch (err) {
+      console.error('Failed to clear all notifications:', err);
+      get().fetchNotifications();
+    }
+  },
+
+  addFromWebSocket: (notification: Notification) => {
+    const normalized = normalizeNotification(notification);
+    set((state) => {
+      const exists = state.notifications.some((n) => n.id === normalized.id);
+      if (exists) return state;
+      const notifications = [normalized, ...state.notifications].slice(0, 50);
+      return {
+        notifications,
+        unreadCount: state.unreadCount + (normalized.read ? 0 : 1),
+      };
+    });
+  },
+
+  setUnreadCount: (count: number) => {
+    set({ unreadCount: count });
+  },
+}));

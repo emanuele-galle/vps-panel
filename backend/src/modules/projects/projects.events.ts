@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
 
 import { projectEvents, ProjectEventTypes } from './projects.service';
+import { DEPLOY_EVENT_TYPES } from './deploy.service';
+import { NOTIFICATION_EVENT_TYPES } from '../../services/notification.service';
 import log from '../../services/logger.service';
 
 /**
@@ -54,6 +56,29 @@ export class ProjectsWebSocketHandler {
     // Container status changed
     projectEvents.on(ProjectEventTypes.CONTAINER_STATUS_CHANGED, (data) => {
       this.broadcast('project:container:status', data, data.projectId);
+    });
+
+    // Deploy events
+    projectEvents.on(DEPLOY_EVENT_TYPES.DEPLOY_LOG, (data) => {
+      this.broadcast('deploy:log', data, data.projectId);
+    });
+
+    projectEvents.on(DEPLOY_EVENT_TYPES.DEPLOY_STATUS, (data) => {
+      this.broadcast('deploy:status', data, data.projectId);
+    });
+
+    projectEvents.on(DEPLOY_EVENT_TYPES.DEPLOY_COMPLETED, (data) => {
+      this.broadcast('deploy:completed', data, data.projectId);
+    });
+
+    // Notification events
+    projectEvents.on(NOTIFICATION_EVENT_TYPES.NOTIFICATION_NEW, (data) => {
+      // Broadcast to all global clients (notifications are user-specific but for single-admin this is fine)
+      this.broadcast('notification:new', data);
+    });
+
+    projectEvents.on(NOTIFICATION_EVENT_TYPES.NOTIFICATION_COUNT, (data) => {
+      this.broadcast('notification:count', data);
     });
   }
 
