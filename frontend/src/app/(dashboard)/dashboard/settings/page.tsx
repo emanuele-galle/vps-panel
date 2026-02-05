@@ -324,7 +324,7 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <div className="border-b border-border">
-        <nav className="-mb-px flex space-x-8 overflow-x-auto">
+        <nav className="-mb-px flex space-x-8 overflow-x-auto scrollbar-thin pb-px">
           {/* User Tabs */}
           {userTabs.map((tab) => {
             const Icon = tab.icon;

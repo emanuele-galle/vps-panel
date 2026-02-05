@@ -36,7 +36,14 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString();
+    return new Date(dateString).toLocaleString('it-IT', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
   };
 
   return (
@@ -46,22 +53,22 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
           <thead className="bg-muted/50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Status
+                Stato
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                User
+                Utente
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Action
+                Azione
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Resource
+                Risorsa
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Description
+                Descrizione
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Date
+                Data
               </th>
             </tr>
           </thead>
@@ -88,7 +95,7 @@ export function ActivityLogTable({ logs }: ActivityLogTableProps) {
                     </div>
                   ) : (
                     <span className="text-sm text-muted-foreground">
-                      System
+                      Sistema
                     </span>
                   )}
                 </td>

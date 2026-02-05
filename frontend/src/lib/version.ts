@@ -18,6 +18,14 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 - **Dark mode Project Discovery** - Fix classi colore incompatibili con tema scuro
 - **Accessibilità MobileSidebar** - Aggiunto SheetTitle nascosto per screen reader
 - **Login branding** - Logo FODI S.r.l., rimosso placeholder credenziali sviluppo
+- **i18n Domini** - Tradotte tutte le label in inglese (Active, Visit, Deactivate, Last Updated → italiano)
+- **i18n Log Attività** - Headers tabella tradotti (Status→Stato, User→Utente, Action→Azione, etc.)
+- **i18n Log Attività** - Formato date da AM/PM a 24h italiano (dd/mm/yyyy, HH:mm)
+- **i18n Monitoraggio** - Assi grafici tradotti (Usage→Utilizzo, Traffic→Traffico, Memory→Memoria)
+- **Database emoji rendering** - Sostituiti emoji (🐬🐘🍃) con badge testuali (MY, PG, MG, RD)
+- **N8N version display** - Rimosso "vlatest" quando versione è Docker image tag
+- **Settings tab overflow** - Migliorato scroll orizzontale tab su viewport ridotti
+- **File Manager titolo** - Allineato titolo pagina "File Manager" con label sidebar
 
 ### Added
 - **Skeleton loaders** su widget dashboard (SystemHealth, RecentDeployments, RecentNotifications)

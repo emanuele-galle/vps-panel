@@ -45,7 +45,7 @@ export function DomainCard({ domain }: DomainCardProps) {
   const handleDelete = async () => {
     if (
       !confirm(
-        `Are you sure you want to delete "${domain.domain}"? This action cannot be undone.`
+        `Sei sicuro di voler eliminare "${domain.domain}"? Questa azione non può essere annullata.`
       )
     ) {
       return;
@@ -79,13 +79,13 @@ export function DomainCard({ domain }: DomainCardProps) {
             </div>
             {domain.project && (
               <p className="text-sm text-muted-foreground mt-1">
-                Project: {domain.project.name}
+                Progetto: {domain.project.name}
               </p>
             )}
           </div>
           <div className="flex flex-col gap-2">
             <Badge variant={domain.isActive ? 'success' : 'error'}>
-              {domain.isActive ? 'Active' : 'Inactive'}
+              {domain.isActive ? 'Attivo' : 'Inattivo'}
             </Badge>
             {domain.sslEnabled && (
               <Badge variant="success">
@@ -113,7 +113,7 @@ export function DomainCard({ domain }: DomainCardProps) {
           <div>
             <p className="text-xs text-muted-foreground">Creato</p>
             <p className="text-sm text-foreground">
-              {new Date(domain.createdAt).toLocaleDateString('en-US', {
+              {new Date(domain.createdAt).toLocaleDateString('it-IT', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -122,9 +122,9 @@ export function DomainCard({ domain }: DomainCardProps) {
           </div>
 
           <div>
-            <p className="text-xs text-muted-foreground">Last Updated</p>
+            <p className="text-xs text-muted-foreground">Ultimo Aggiornamento</p>
             <p className="text-sm text-foreground">
-              {new Date(domain.updatedAt).toLocaleDateString('en-US', {
+              {new Date(domain.updatedAt).toLocaleDateString('it-IT', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -145,7 +145,7 @@ export function DomainCard({ domain }: DomainCardProps) {
               className="h-8"
             >
               <ExternalLink className="h-3.5 w-3.5 mr-1" />
-              Visit
+              Visita
             </Button>
 
             <div className="flex items-center gap-1">
@@ -155,7 +155,7 @@ export function DomainCard({ domain }: DomainCardProps) {
                 onClick={handleToggleSSL}
                 disabled={isLoading}
                 className="h-8"
-                title={domain.sslEnabled ? 'Disable SSL' : 'Enable SSL'}
+                title={domain.sslEnabled ? 'Disabilita SSL' : 'Abilita SSL'}
               >
                 {domain.sslEnabled ? (
                   <Shield className="h-3.5 w-3.5" />
@@ -170,7 +170,7 @@ export function DomainCard({ domain }: DomainCardProps) {
                 onClick={handleToggleActive}
                 disabled={isLoading}
                 className="h-8"
-                title={domain.isActive ? 'Deactivate' : 'Activate'}
+                title={domain.isActive ? 'Disattiva' : 'Attiva'}
               >
                 {domain.isActive ? (
                   <CheckCircle className="h-3.5 w-3.5 text-success" />

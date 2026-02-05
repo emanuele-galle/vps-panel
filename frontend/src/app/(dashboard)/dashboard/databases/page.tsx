@@ -140,7 +140,7 @@ export default function DatabasesPage() {
         <div className="bg-card rounded-lg border border-border p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-muted-foreground">Total</p>
+              <p className="text-xs text-muted-foreground">Totale</p>
               <p className="text-2xl font-bold text-foreground mt-1">
                 {databases.length}
               </p>
@@ -157,7 +157,9 @@ export default function DatabasesPage() {
                 {countByType.MYSQL}
               </p>
             </div>
-            <span className="text-2xl">🐬</span>
+            <div className="h-10 w-10 rounded-lg bg-primary/15 flex items-center justify-center">
+              <span className="text-sm font-bold text-primary">MY</span>
+            </div>
           </div>
         </div>
 
@@ -169,19 +171,23 @@ export default function DatabasesPage() {
                 {countByType.POSTGRESQL}
               </p>
             </div>
-            <span className="text-2xl">🐘</span>
+            <div className="h-10 w-10 rounded-lg bg-success/15 flex items-center justify-center">
+              <span className="text-sm font-bold text-success">PG</span>
+            </div>
           </div>
         </div>
 
-        <div className="bg-card rounded-lg border border-success/30 p-4">
+        <div className="bg-card rounded-lg border border-emerald-500/30 p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-success">MongoDB</p>
-              <p className="text-2xl font-bold text-success mt-1">
+              <p className="text-xs text-emerald-600 dark:text-emerald-400">MongoDB</p>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
                 {countByType.MONGODB}
               </p>
             </div>
-            <span className="text-2xl">🍃</span>
+            <div className="h-10 w-10 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+              <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">MG</span>
+            </div>
           </div>
         </div>
 
@@ -193,7 +199,9 @@ export default function DatabasesPage() {
                 {countByType.REDIS}
               </p>
             </div>
-            <span className="text-2xl">⚡</span>
+            <div className="h-10 w-10 rounded-lg bg-destructive/15 flex items-center justify-center">
+              <span className="text-sm font-bold text-destructive">RD</span>
+            </div>
           </div>
         </div>
       </div>
@@ -403,16 +411,16 @@ export default function DatabasesPage() {
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     {typesInGroup.postgresql > 0 && (
-                      <span className="text-success">🐘 {typesInGroup.postgresql}</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-success/15 text-success">PG {typesInGroup.postgresql}</span>
                     )}
                     {typesInGroup.mysql > 0 && (
-                      <span className="text-primary">🐬 {typesInGroup.mysql}</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/15 text-primary">MY {typesInGroup.mysql}</span>
                     )}
                     {typesInGroup.mongodb > 0 && (
-                      <span className="text-success">🍃 {typesInGroup.mongodb}</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">MG {typesInGroup.mongodb}</span>
                     )}
                     {typesInGroup.redis > 0 && (
-                      <span className="text-destructive">⚡ {typesInGroup.redis}</span>
+                      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-destructive/15 text-destructive">RD {typesInGroup.redis}</span>
                     )}
                   </div>
                 </button>

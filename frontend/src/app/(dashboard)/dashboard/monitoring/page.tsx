@@ -180,7 +180,7 @@ export default function MonitoringPage() {
             <MetricsCard
               title="Memoria"
               value={formatBytes(currentMetrics.memory.used)}
-              subtitle={`of ${formatBytes(currentMetrics.memory.total)}`}
+              subtitle={`di ${formatBytes(currentMetrics.memory.total)}`}
               icon={Activity}
               iconColor="text-success"
               percentage={currentMetrics.memory.percentage}
@@ -192,7 +192,7 @@ export default function MonitoringPage() {
             <MetricsCard
               title="Spazio Disco"
               value={formatBytes(currentMetrics.disk.used)}
-              subtitle={`of ${formatBytes(currentMetrics.disk.total)}`}
+              subtitle={`di ${formatBytes(currentMetrics.disk.total)}`}
               icon={HardDrive}
               iconColor="text-accent"
               percentage={currentMetrics.disk.percentage}
@@ -244,7 +244,7 @@ export default function MonitoringPage() {
                 { dataKey: 'cpu', name: 'CPU', color: 'var(--primary)' },
                 {
                   dataKey: 'memory.percentage',
-                  name: 'Memory',
+                  name: 'Memoria',
                   color: 'var(--success)',
                 },
               ]}
@@ -255,7 +255,7 @@ export default function MonitoringPage() {
               title="Utilizzo Disco (24h)"
               data={metricsHistory}
               lines={[
-                { dataKey: 'disk.percentage', name: 'Disk', color: 'var(--accent)' },
+                { dataKey: 'disk.percentage', name: 'Disco', color: 'var(--accent)' },
               ]}
             />
           </motion.div>
@@ -274,16 +274,16 @@ export default function MonitoringPage() {
               lines={[
                 {
                   dataKey: 'networkReceived',
-                  name: 'Download (MB)',
+                  name: 'Ricevuti (MB)',
                   color: 'var(--success)',
                 },
                 {
                   dataKey: 'networkTransmitted',
-                  name: 'Upload (MB)',
+                  name: 'Trasmessi (MB)',
                   color: 'var(--warning)',
                 },
               ]}
-              yAxisLabel="Traffic (MB)"
+              yAxisLabel="Traffico (MB)"
               height={250}
             />
           </motion.div>

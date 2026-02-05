@@ -616,7 +616,7 @@ export default function FileManagerPage() {
       {/* Toolbar */}
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Gestione File</h1>
+          <h1 className="text-3xl font-bold">File Manager</h1>
           <div className="flex items-center gap-2">
             <Button onClick={() => setViewMode(viewMode === 'table' ? 'tree' : 'table')} variant="outline" size="sm">
               {viewMode === 'table' ? (

@@ -30,7 +30,7 @@ export function ResourceUsageChart({
   title,
   data,
   lines,
-  yAxisLabel = 'Usage (%)',
+  yAxisLabel = 'Utilizzo (%)',
   height = 300,
 }: ResourceUsageChartProps) {
   const formatTime = (timestamp: string) => {

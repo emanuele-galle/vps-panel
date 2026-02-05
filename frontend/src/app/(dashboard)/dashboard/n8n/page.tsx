@@ -116,7 +116,7 @@ export default function N8nPage() {
               <Badge variant={status?.running ? 'default' : 'destructive'}>
                 {status?.running ? 'In Esecuzione' : 'Fermo'}
               </Badge>
-              {status?.version && (
+              {status?.version && status.version !== 'latest' && status.version !== 'unknown' && (
                 <span className="text-sm text-muted-foreground">
                   v{status.version}
                 </span>
