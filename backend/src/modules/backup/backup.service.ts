@@ -19,7 +19,7 @@ const PROJECTS_DIR = '/var/www/projects';
 const BACKUP_EXPIRY_HOURS = parseInt(process.env.BACKUP_EXPIRY_HOURS || '24');
 
 // Helper to convert BigInt fields to Number for JSON serialization
-function serializeBackup(backup: any): Record<string, any> {
+function serializeBackup(backup: Record<string, unknown> | null): Record<string, unknown> | null {
   if (!backup) return backup;
   return {
     ...backup,
@@ -398,15 +398,19 @@ class BackupService {
       log.info('[Backup Export] Copying project files...');
       await this.copyProjectFilesForExport(project.path, join(tempDir, 'project'));
 
-      // 5. Export database associati
+      // 5. Export database associati (parallelizzato con concurrency limit)
       log.info('[Backup Export] Exporting databases...');
-      for (const db of project.databases) {
-        try {
-          await this.exportDatabaseForBackup(db, join(tempDir, 'databases'), project.slug);
-        } catch (err) {
-          log.error(`[Backup Export] Failed to export database ${db.name}:`, err instanceof Error ? err.message : 'Unknown error');
-          // Continua con gli altri database
-        }
+      const DB_EXPORT_CONCURRENCY = 3;
+      for (let i = 0; i < project.databases.length; i += DB_EXPORT_CONCURRENCY) {
+        const batch = project.databases.slice(i, i + DB_EXPORT_CONCURRENCY);
+        await Promise.allSettled(
+          batch.map(db =>
+            this.exportDatabaseForBackup(db, join(tempDir, 'databases'), project.slug)
+              .catch(err => {
+                log.error(`[Backup Export] Failed to export database ${db.name}:`, err instanceof Error ? err.message : 'Unknown error');
+              })
+          )
+        );
       }
 
       // 6. Genera manifest.json

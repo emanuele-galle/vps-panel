@@ -71,6 +71,7 @@ export default function ContainersPage() {
   const [showAll, setShowAll] = useState(true);
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
   const [groupBy, setGroupBy] = useState<'group' | 'none'>('group');
+  const [sortBy, setSortBy] = useState<string>('name-asc');
 
   useEffect(() => {
     fetchContainers(showAll);
@@ -80,20 +81,35 @@ export default function ContainersPage() {
     fetchContainers(showAll);
   };
 
-  const filteredContainers = containers.filter((container) => {
-    const containerName = container.Names?.[0]?.replace(/^\//, '') || '';
-    const matchesSearch =
-      searchQuery === '' ||
-      containerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      container.Image.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      container.Id.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredContainers = containers
+    .filter((container) => {
+      const containerName = container.Names?.[0]?.replace(/^\//, '') || '';
+      const matchesSearch =
+        searchQuery === '' ||
+        containerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        container.Image.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        container.Id.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesStatus =
-      statusFilter === '' ||
-      container.State.toLowerCase() === statusFilter.toLowerCase();
+      const matchesStatus =
+        statusFilter === '' ||
+        container.State.toLowerCase() === statusFilter.toLowerCase();
 
-    return matchesSearch && matchesStatus;
-  });
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      const nameA = a.Names?.[0]?.replace(/^\//, '') || '';
+      const nameB = b.Names?.[0]?.replace(/^\//, '') || '';
+      switch (sortBy) {
+        case 'name-asc': return nameA.localeCompare(nameB);
+        case 'name-desc': return nameB.localeCompare(nameA);
+        case 'status': {
+          const order: Record<string, number> = { running: 0, restarting: 1, paused: 2, created: 3, exited: 4 };
+          return (order[a.State.toLowerCase()] ?? 5) - (order[b.State.toLowerCase()] ?? 5);
+        }
+        case 'created': return (b.Created || 0) - (a.Created || 0);
+        default: return 0;
+      }
+    });
 
   const groupedContainers = useMemo(() => {
     const groups: Record<string, { containers: typeof containers; isSystem: boolean }> = {};
@@ -227,7 +243,7 @@ export default function ContainersPage() {
 
       {/* Filters and Search */}
       <motion.div variants={fadeInUp} className="glass rounded-xl border border-border/50 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -253,6 +269,19 @@ export default function ContainersPage() {
               <option value="created">Creato</option>
               <option value="paused">In Pausa</option>
               <option value="restarting">Riavvio</option>
+            </select>
+          </div>
+
+          <div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+            >
+              <option value="name-asc">Nome A-Z</option>
+              <option value="name-desc">Nome Z-A</option>
+              <option value="status">Stato</option>
+              <option value="created">Più recenti</option>
             </select>
           </div>
         </div>

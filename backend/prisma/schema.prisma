@@ -888,6 +888,8 @@ model Deployment {
   createdAt     DateTime         @default(now())
 
   @@index([projectId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@index([status])
   @@map("deployments")
 }
 

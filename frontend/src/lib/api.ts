@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
@@ -48,7 +48,7 @@ let isRefreshing = false;
 api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as any;
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -82,7 +82,7 @@ api.interceptors.response.use(
     }
 
     // Handle other errors
-    const responseData = error.response?.data as any;
+    const responseData = error.response?.data as { error?: { message?: string }; message?: string } | undefined;
     const errorMessage =
       responseData?.error?.message ||
       responseData?.message ||

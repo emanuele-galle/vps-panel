@@ -63,6 +63,8 @@ export default function FileManagerPage() {
   const [isLoadingContent, setIsLoadingContent] = useState(false);
   const [extractingArchive, setExtractingArchive] = useState<FileItem | null>(null);
   const [extractDestination, setExtractDestination] = useState<string>('');
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [isUploading, setIsUploading] = useState(false);
 
   const API_URL = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
     ? `https://api.${window.location.hostname}`
@@ -352,27 +354,43 @@ export default function FileManagerPage() {
     }
   };
 
+  const uploadFileWithProgress = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append('file', file);
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          setUploadProgress(Math.round((e.loaded / e.total) * 100));
+        }
+      });
+
+      xhr.addEventListener('load', () => resolve(xhr.status >= 200 && xhr.status < 300));
+      xhr.addEventListener('error', () => resolve(false));
+
+      xhr.open('POST', `${API_URL}/api/files/upload?path=${encodeURIComponent(currentPath)}`);
+      xhr.withCredentials = true;
+      const csrfToken = getCsrfToken();
+      if (csrfToken) xhr.setRequestHeader('x-csrf-token', csrfToken);
+      xhr.send(formData);
+    });
+  };
+
   const handleUpload = async () => {
     if (uploadFiles.length === 0) return;
-    setLoading(true);
+    setIsUploading(true);
+    setUploadProgress(0);
     let successCount = 0;
     const failedFiles: string[] = [];
 
     try {
-      for (const file of uploadFiles) {
-        try {
-          const formData = new FormData();
-          formData.append('file', file);
-          const response = await fetchWithCsrf(`${API_URL}/api/files/upload?path=${encodeURIComponent(currentPath)}`, {
-            method: 'POST',
-            credentials: 'include',
-            body: formData,
-          });
-          if (!response.ok) failedFiles.push(file.name);
-          else successCount++;
-        } catch {
-          failedFiles.push(file.name);
-        }
+      for (let i = 0; i < uploadFiles.length; i++) {
+        const file = uploadFiles[i];
+        setUploadProgress(0);
+        const ok = await uploadFileWithProgress(file);
+        if (!ok) failedFiles.push(file.name);
+        else successCount++;
       }
 
       setShowUploadModal(false);
@@ -387,7 +405,8 @@ export default function FileManagerPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Errore durante il caricamento');
     } finally {
-      setLoading(false);
+      setIsUploading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -756,6 +775,8 @@ export default function FileManagerPage() {
           onFilesChange={setUploadFiles}
           onUpload={handleUpload}
           onClose={() => { setShowUploadModal(false); setUploadFiles([]); }}
+          isUploading={isUploading}
+          uploadProgress={uploadProgress}
         />
       )}
 

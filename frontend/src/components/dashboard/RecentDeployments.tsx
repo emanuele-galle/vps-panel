@@ -9,6 +9,7 @@ import { it } from 'date-fns/locale';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { fadeInUp } from '@/lib/motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Deployment {
   id: string;
@@ -21,7 +22,9 @@ interface Deployment {
   userName: string;
 }
 
-const statusConfig: Record<string, { variant: any; label: string }> = {
+type BadgeVariant = 'default' | 'secondary' | 'outline' | 'destructive' | 'success' | 'warning' | 'error' | 'info';
+
+const statusConfig: Record<string, { variant: BadgeVariant; label: string }> = {
   SUCCESS: { variant: 'success', label: 'OK' },
   FAILED: { variant: 'destructive', label: 'Fallito' },
   PENDING: { variant: 'default', label: 'In attesa' },
@@ -31,7 +34,25 @@ const statusConfig: Record<string, { variant: any; label: string }> = {
   HEALTH_CHECK: { variant: 'info', label: 'Check' },
 };
 
-export function RecentDeployments({ deployments }: { deployments: Deployment[] }) {
+function RecentDeploymentsSkeleton() {
+  return (
+    <div className="space-y-2">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="flex items-center justify-between p-3 rounded-lg">
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-5 w-12 rounded-full" />
+            </div>
+            <Skeleton className="h-3 w-40" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function RecentDeployments({ deployments, isLoading }: { deployments: Deployment[]; isLoading?: boolean }) {
   return (
     <motion.div variants={fadeInUp}>
       <Card className="glass border-border/50 h-full">
@@ -42,7 +63,9 @@ export function RecentDeployments({ deployments }: { deployments: Deployment[] }
           </div>
         </CardHeader>
         <CardContent className="pb-4">
-          {deployments.length > 0 ? (
+          {isLoading ? (
+            <RecentDeploymentsSkeleton />
+          ) : deployments.length > 0 ? (
             <div className="space-y-2">
               {deployments.map((deploy, index) => {
                 const sc = statusConfig[deploy.status] || { variant: 'default', label: deploy.status };

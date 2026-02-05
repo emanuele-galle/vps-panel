@@ -142,22 +142,22 @@ export function ProjectDiscovery() {
   const getTemplateColor = (template: string) => {
     switch (template) {
       case 'NEXTJS':
-        return 'bg-black text-white';
+        return 'bg-foreground text-background';
       case 'REACT':
-        return 'bg-primary text-white';
+        return 'bg-primary text-primary-foreground';
       case 'NODEJS':
         return 'bg-success text-white';
       case 'WORDPRESS':
         return 'bg-primary text-primary-foreground';
       case 'PYTHON':
-        return 'bg-warning/100 text-black';
+        return 'bg-warning text-warning-foreground';
       default:
-        return 'bg-muted/500 text-white';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
   return (
-    <Card className="mb-6 border-dashed border-2 border-primary/40 bg-primary/10 bg-primary/10">
+    <Card className="mb-6 border-dashed border-2 border-primary/40 bg-primary/5 dark:bg-primary/10">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

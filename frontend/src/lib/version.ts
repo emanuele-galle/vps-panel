@@ -1,6 +1,6 @@
 // Versione della VPS Console - Aggiornare ad ogni release
-export const VERSION = '1.7.0';
-export const VERSION_DATE = '2026-02-04';
+export const VERSION = '1.7.1';
+export const VERSION_DATE = '2026-02-05';
 export const VERSION_NAME = 'FODI Console';
 
 // Changelog completo (formato Markdown)
@@ -10,6 +10,33 @@ Tutte le modifiche significative al progetto VPS Panel saranno documentate in qu
 
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
+
+## [1.7.1] - 2026-02-05
+
+### Fixed
+- **Header flash "Benvenuto, Utente"** - Aggiunto skeleton loader finché auth non è inizializzato
+- **Dark mode Project Discovery** - Fix classi colore incompatibili con tema scuro
+- **Accessibilità MobileSidebar** - Aggiunto SheetTitle nascosto per screen reader
+- **Login branding** - Logo FODI S.r.l., rimosso placeholder credenziali sviluppo
+
+### Added
+- **Skeleton loaders** su widget dashboard (SystemHealth, RecentDeployments, RecentNotifications)
+- **Tab persistence** nella pagina progetto via URL query params
+- **Timestamp aggiornamento** metriche dashboard con indicatore "Aggiornato X secondi fa"
+- **Notifiche cliccabili** nel widget RecentNotifications (actionHref)
+- **Ordinamento liste** Progetti, Container e Database (nome, stato, data)
+- **Progress bar upload** file con percentuale real-time
+- **Stepper numerato** nel DeployModal (Fase X/4)
+- **Filtri notifiche** nel dropdown (Tutte/Deploy/Alert/Sistema)
+- **Shortcut "?" discovery** nel footer sidebar per keyboard shortcuts
+
+### Changed
+- Pagina login ridisegnata con branding FODI S.r.l. e gradient background
+- Info sviluppatore aggiornate a FODI S.r.l. su tutti i package.json
+- Pagina Database: usa ErrorState component per gestione errori
+- Version bump da 1.7.0 a 1.7.1
+
+---
 
 ## [1.7.0] - 2026-02-04
 
@@ -159,7 +186,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
-## Stack Attuale (v1.7.0)
+## Stack Attuale (v1.7.1)
 
 **Frontend:**
 - Next.js 16.1.1 (App Router)
@@ -179,7 +206,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 **Infrastruttura:**
 - Docker & Docker Compose
 - Traefik reverse proxy + SSL
-- PM2 per progetti Node.js
+- Docker Compose per progetti
 - MinIO object storage
 - N8N automazioni
 `;

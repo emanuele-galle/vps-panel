@@ -252,17 +252,26 @@ export function Sidebar({ onNavigate }: SidebarProps) {
               Sistema OK
             </p>
           </div>
-          <button
-            onClick={() => setChangelogOpen(true)}
-            className="text-xs font-semibold text-primary/80 bg-primary/10 px-2 py-0.5 rounded-full hover:bg-primary/20 hover:text-primary transition-colors cursor-pointer"
-            title="Visualizza changelog"
-          >
-            v{VERSION}
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => document.dispatchEvent(new KeyboardEvent('keydown', { key: '?' }))}
+              className="text-xs font-mono text-muted-foreground/60 bg-muted/50 w-5 h-5 rounded flex items-center justify-center hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+              title="Scorciatoie tastiera (?)"
+            >
+              ?
+            </button>
+            <button
+              onClick={() => setChangelogOpen(true)}
+              className="text-xs font-semibold text-primary/80 bg-primary/10 px-2 py-0.5 rounded-full hover:bg-primary/20 hover:text-primary transition-colors cursor-pointer"
+              title="Visualizza changelog"
+            >
+              v{VERSION}
+            </button>
+          </div>
         </motion.div>
       </div>
 
-      {/* Changelog Modal */}
+      {/* Modals */}
       <ChangelogDialog open={changelogOpen} onOpenChange={setChangelogOpen} />
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useMonitoringStore } from '@/store/monitoringStore';
 import { useProjectsStore } from '@/store/projectsStore';
 import { useDatabasesStore } from '@/store/databasesStore';
@@ -32,7 +32,10 @@ import {
   Plus,
   ChevronRight,
   Zap,
+  Clock,
 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { it } from 'date-fns/locale';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -227,6 +230,8 @@ export default function DashboardPage() {
 
   const [dashboardSummary, setDashboardSummary] = useState<any>(null);
   const [recentNotifications, setRecentNotifications] = useState<any[]>([]);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
 
   const fetchDashboardData = async () => {
     try {
@@ -236,8 +241,11 @@ export default function DashboardPage() {
       ]);
       setDashboardSummary(summaryRes.data?.data || null);
       setRecentNotifications(notifsRes.data?.data?.notifications || notifsRes.data?.data || []);
+      setLastUpdated(new Date());
     } catch {
       // Silently fail - dashboard summary is optional
+    } finally {
+      setDashboardLoading(false);
     }
   };
 
@@ -416,18 +424,24 @@ export default function DashboardPage() {
         </motion.div>
       </motion.div>
 
-      {/* System Health Summary */}
-      {dashboardSummary?.systemHealth && (
-        <SystemHealthCard health={dashboardSummary.systemHealth} />
+      {/* Last Updated Timestamp */}
+      {lastUpdated && (
+        <motion.div variants={fadeInUp} className="flex items-center justify-end gap-1.5 text-xs text-muted-foreground">
+          <Clock className="h-3 w-3" />
+          <span>Aggiornato {formatDistanceToNow(lastUpdated, { addSuffix: true, locale: it })}</span>
+        </motion.div>
       )}
+
+      {/* System Health Summary */}
+      <SystemHealthCard health={dashboardSummary?.systemHealth || null} isLoading={dashboardLoading} />
 
       {/* Recent Deployments + Notifications */}
       <motion.div
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
         variants={staggerContainer}
       >
-        <RecentDeployments deployments={dashboardSummary?.recentDeployments || []} />
-        <RecentNotifications notifications={recentNotifications} />
+        <RecentDeployments deployments={dashboardSummary?.recentDeployments || []} isLoading={dashboardLoading} />
+        <RecentNotifications notifications={recentNotifications} isLoading={dashboardLoading} />
       </motion.div>
 
       {/* Quick Stats Row */}

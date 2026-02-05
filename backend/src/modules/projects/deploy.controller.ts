@@ -22,8 +22,9 @@ export class DeployController {
     try {
       const deployment = await deployService.startDeploy(id, userId, branch);
       return reply.status(201).send({ success: true, data: deployment });
-    } catch (error: any) {
-      return reply.status(409).send({ success: false, error: { code: 'DEPLOY_CONFLICT', message: error.message } });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Deploy non riuscito';
+      return reply.status(409).send({ success: false, error: { code: 'DEPLOY_CONFLICT', message } });
     }
   }
 
@@ -48,8 +49,9 @@ export class DeployController {
     try {
       const deployment = await deployService.startRollback(id, deploymentId, userId);
       return reply.status(201).send({ success: true, data: deployment });
-    } catch (error: any) {
-      return reply.status(409).send({ success: false, error: { code: 'ROLLBACK_ERROR', message: error.message } });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Rollback non riuscito';
+      return reply.status(409).send({ success: false, error: { code: 'ROLLBACK_ERROR', message } });
     }
   }
 

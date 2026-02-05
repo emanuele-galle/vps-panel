@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { backupsApi, projectsApi } from '@/lib/api';
+import { getErrorMessage } from '@/lib/errors';
 import { Button } from '@/components/ui/button';
 import { useProjectsStore } from '@/store/projectsStore';
 import { useDatabasesStore } from '@/store/databasesStore';
@@ -21,6 +22,7 @@ import { WebTerminal } from '@/components/terminal/WebTerminal';
 export default function ProjectDetailsPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const projectId = params.id as string;
 
   const {
@@ -40,7 +42,8 @@ export default function ProjectDetailsPage() {
 
   const [actionLoading, setActionLoading] = useState(false);
   const [copiedText, setCopiedText] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('logs');
+  const tabFromUrl = searchParams.get('tab') as TabType | null;
+  const [activeTab, setActiveTab] = useState<TabType>(tabFromUrl || 'logs');
   const [showPasswords, setShowPasswords] = useState(false);
   const [tempFiles, setTempFiles] = useState<any[]>([]);
   const [uploadLoading, setUploadLoading] = useState(false);
@@ -58,6 +61,18 @@ export default function ProjectDetailsPage() {
   const [terminalContainerId, setTerminalContainerId] = useState<string | null>(null);
 
   const projectDatabases = databases.filter(db => db.projectId === projectId);
+
+  const handleTabChange = useCallback((tab: TabType) => {
+    setActiveTab(tab);
+    const params = new URLSearchParams(window.location.search);
+    if (tab === 'logs') {
+      params.delete('tab');
+    } else {
+      params.set('tab', tab);
+    }
+    const query = params.toString();
+    router.replace(`/dashboard/projects/${projectId}${query ? `?${query}` : ''}`, { scroll: false });
+  }, [projectId, router]);
 
   const fetchDeployments = useCallback(async () => {
     try {
@@ -183,8 +198,8 @@ export default function ProjectDetailsPage() {
     try {
       await startProject(projectId);
       await fetchProject(projectId);
-    } catch (error: any) {
-      console.error('Failed to start project:', error.message);
+    } catch (error: unknown) {
+      console.error('Failed to start project:', getErrorMessage(error));
     } finally {
       setActionLoading(false);
     }
@@ -195,8 +210,8 @@ export default function ProjectDetailsPage() {
     try {
       await stopProject(projectId);
       await fetchProject(projectId);
-    } catch (error: any) {
-      console.error('Failed to stop project:', error.message);
+    } catch (error: unknown) {
+      console.error('Failed to stop project:', getErrorMessage(error));
     } finally {
       setActionLoading(false);
     }
@@ -207,8 +222,8 @@ export default function ProjectDetailsPage() {
     try {
       await restartProject(projectId);
       await fetchProject(projectId);
-    } catch (error: any) {
-      console.error('Failed to restart project:', error.message);
+    } catch (error: unknown) {
+      console.error('Failed to restart project:', getErrorMessage(error));
     } finally {
       setActionLoading(false);
     }
@@ -223,8 +238,8 @@ export default function ProjectDetailsPage() {
     try {
       await deleteProject(projectId);
       router.push('/dashboard/projects');
-    } catch (error: any) {
-      console.error('Failed to delete project:', error.message);
+    } catch (error: unknown) {
+      console.error('Failed to delete project:', getErrorMessage(error));
       setActionLoading(false);
     }
   };
@@ -245,8 +260,8 @@ export default function ProjectDetailsPage() {
       if (deployment?.id) {
         setDeploymentId(deployment.id);
       }
-    } catch (error: any) {
-      const msg = error?.response?.data?.error || error.message || 'Errore avvio deploy';
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
       toast.error('Errore avvio deploy', { description: msg });
       setDeployError(msg);
       setDeployStatus('FAILED');
@@ -257,7 +272,7 @@ export default function ProjectDetailsPage() {
   const handleOpenTerminal = () => {
     // Find the main 'app' container for this project
     const appContainer = currentProject?.containers?.find(
-      (c: any) => c.name?.includes('-app-') || c.name?.endsWith('-app')
+      (c: { name?: string; dockerId?: string; id?: string }) => c.name?.includes('-app-') || c.name?.endsWith('-app')
     );
     const cId = appContainer?.dockerId || appContainer?.id;
     if (cId) {
@@ -284,8 +299,8 @@ export default function ProjectDetailsPage() {
       if (deployment?.id) {
         setDeploymentId(deployment.id);
       }
-    } catch (error: any) {
-      const msg = error?.response?.data?.error?.message || error.message || 'Errore avvio rollback';
+    } catch (error: unknown) {
+      const msg = getErrorMessage(error);
       toast.error('Errore avvio rollback', { description: msg });
       setDeployError(msg);
       setDeployStatus('FAILED');
@@ -321,11 +336,11 @@ export default function ProjectDetailsPage() {
 
         window.open(`${process.env.NEXT_PUBLIC_API_URL}${downloadUrl}`, '_blank');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Failed to export backup:', error);
       toast.error('Errore durante la creazione del backup', {
         id: 'export-backup',
-        description: error.message || 'Riprova più tardi',
+        description: getErrorMessage(error),
       });
     } finally {
       setExportLoading(false);
@@ -393,7 +408,7 @@ export default function ProjectDetailsPage() {
 
       <ProjectInfoCards
         project={currentProject}
-        onSwitchToTeamTab={() => setActiveTab('team')}
+        onSwitchToTeamTab={() => handleTabChange('team')}
       />
 
       <ProjectCredentials
@@ -417,7 +432,7 @@ export default function ProjectDetailsPage() {
         copiedText={copiedText}
         uploadLoading={uploadLoading}
         isAdmin={isAdmin}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         onFileUpload={handleFileUpload}
         onDeleteFile={handleDeleteFile}
         onClearAllFiles={handleClearAllFiles}

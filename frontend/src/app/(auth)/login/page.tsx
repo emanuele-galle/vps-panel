@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Server } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -55,13 +56,29 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Accedi</CardTitle>
-          <CardDescription>
-            Inserisci le tue credenziali per accedere al tuo account
-          </CardDescription>
+    <div className="flex min-h-screen items-center justify-center bg-muted/50 px-4 relative overflow-hidden">
+      {/* Background decorative elements */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10 pointer-events-none" />
+      <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+
+      <Card className="w-full max-w-md relative z-10">
+        <CardHeader className="space-y-4 items-center text-center">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
+              <Server className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div className="text-left">
+              <p className="text-lg font-bold text-foreground leading-tight">VPS Console</p>
+              <p className="text-xs text-muted-foreground">by FODI S.r.l.</p>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <CardTitle className="text-2xl font-bold">Accedi</CardTitle>
+            <CardDescription>
+              Inserisci le tue credenziali per accedere al pannello
+            </CardDescription>
+          </div>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -79,7 +96,7 @@ export default function LoginPage() {
                     id="email"
                     type="email"
                     autoComplete="email"
-                    placeholder="admin@vps-panel.local"
+                    placeholder="email@esempio.it"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -146,6 +163,9 @@ export default function LoginPage() {
 
             <p className="text-sm text-center text-muted-foreground">
               Non hai un account? Contatta l'amministratore per richiedere l'accesso
+            </p>
+            <p className="text-xs text-center text-muted-foreground/50 pt-2">
+              VPS Console v1.7.1 &middot; FODI S.r.l.
             </p>
           </CardFooter>
         </form>

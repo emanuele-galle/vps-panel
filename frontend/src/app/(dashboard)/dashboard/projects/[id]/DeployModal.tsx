@@ -86,43 +86,59 @@ export function DeployModal({
         </DialogHeader>
 
         {/* Progress Steps */}
-        <div className="flex items-center justify-between px-4 py-3 bg-muted/50 rounded-lg">
-          {STEPS.map((step, idx) => {
-            const state = getStepState(step);
-            const Icon = step.icon;
-            return (
-              <div key={step.key} className="flex items-center gap-2 flex-1">
-                <div className="flex flex-col items-center gap-1 flex-1">
-                  <div
-                    className={`p-2 rounded-full transition-colors ${
-                      state === 'completed' ? 'bg-green-500/20 text-green-500' :
-                      state === 'active' ? 'bg-blue-500/20 text-blue-500 animate-pulse' :
-                      state === 'failed' ? 'bg-red-500/20 text-red-500' :
-                      'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {state === 'completed' ? <Check className="h-4 w-4" /> :
-                     state === 'failed' ? <X className="h-4 w-4" /> :
-                     state === 'active' ? <Loader2 className="h-4 w-4 animate-spin" /> :
-                     <Icon className="h-4 w-4" />}
+        <div className="px-4 py-3 bg-muted/50 rounded-lg">
+          {/* Step counter */}
+          <div className="text-center mb-3">
+            <span className="text-xs font-medium text-muted-foreground">
+              Fase {Math.min(STEPS.findIndex(s => s.statusMatch.some(sm => sm === status)) + 1 || (status === 'SUCCESS' ? 4 : status === 'PENDING' ? 0 : 1), 4)}/{STEPS.length}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            {STEPS.map((step, idx) => {
+              const state = getStepState(step);
+              const Icon = step.icon;
+              return (
+                <div key={step.key} className="flex items-center gap-2 flex-1">
+                  <div className="flex flex-col items-center gap-1 flex-1">
+                    <div
+                      className={`relative p-2 rounded-full transition-colors ${
+                        state === 'completed' ? 'bg-green-500/20 text-green-500' :
+                        state === 'active' ? 'bg-blue-500/20 text-blue-500 animate-pulse' :
+                        state === 'failed' ? 'bg-red-500/20 text-red-500' :
+                        'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      {state === 'completed' ? <Check className="h-4 w-4" /> :
+                       state === 'failed' ? <X className="h-4 w-4" /> :
+                       state === 'active' ? <Loader2 className="h-4 w-4 animate-spin" /> :
+                       <Icon className="h-4 w-4" />}
+                      <span className={`absolute -top-1 -right-1 text-[9px] font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center ${
+                        state === 'completed' ? 'bg-green-500 text-white' :
+                        state === 'active' ? 'bg-blue-500 text-white' :
+                        state === 'failed' ? 'bg-red-500 text-white' :
+                        'bg-muted-foreground/30 text-muted-foreground'
+                      }`}>
+                        {idx + 1}
+                      </span>
+                    </div>
+                    <span className={`text-xs font-medium ${
+                      state === 'completed' ? 'text-green-500' :
+                      state === 'active' ? 'text-blue-500' :
+                      state === 'failed' ? 'text-red-500' :
+                      'text-muted-foreground'
+                    }`}>
+                      {step.label}
+                    </span>
                   </div>
-                  <span className={`text-xs font-medium ${
-                    state === 'completed' ? 'text-green-500' :
-                    state === 'active' ? 'text-blue-500' :
-                    state === 'failed' ? 'text-red-500' :
-                    'text-muted-foreground'
-                  }`}>
-                    {step.label}
-                  </span>
+                  {idx < STEPS.length - 1 && (
+                    <div className={`h-0.5 flex-1 mx-1 rounded transition-colors ${
+                      state === 'completed' ? 'bg-green-500' : 'bg-border'
+                    }`} />
+                  )}
                 </div>
-                {idx < STEPS.length - 1 && (
-                  <div className={`h-0.5 flex-1 mx-1 rounded ${
-                    state === 'completed' ? 'bg-green-500' : 'bg-border'
-                  }`} />
-                )}
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
 
         {/* Log Area */}

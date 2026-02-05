@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Filter, Search, RefreshCw } from 'lucide-react';
+import { Plus, Filter, Search, RefreshCw, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ProjectCard } from '@/components/dashboard/ProjectCard';
@@ -20,6 +20,7 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [templateFilter, setTemplateFilter] = useState<string>('');
+  const [sortBy, setSortBy] = useState<string>('name-asc');
 
   useEffect(() => {
     fetchProjects();
@@ -42,15 +43,28 @@ export default function ProjectsPage() {
     fetchProjects(filters);
   };
 
-  const filteredProjects = projects.filter((project) => {
-    const matchesSearch =
-      searchQuery === '' ||
-      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (project.description && project.description.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredProjects = projects
+    .filter((project) => {
+      const matchesSearch =
+        searchQuery === '' ||
+        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        project.slug.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (project.description && project.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    return matchesSearch;
-  });
+      return matchesSearch;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'name-asc': return a.name.localeCompare(b.name);
+        case 'name-desc': return b.name.localeCompare(a.name);
+        case 'status': {
+          const order: Record<string, number> = { ACTIVE: 0, BUILDING: 1, ERROR: 2, INACTIVE: 3 };
+          return (order[a.status] ?? 4) - (order[b.status] ?? 4);
+        }
+        case 'created': return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+        default: return 0;
+      }
+    });
 
   const hasActiveFilters = searchQuery || statusFilter || templateFilter;
 
@@ -89,7 +103,7 @@ export default function ProjectsPage() {
         variants={fadeInUp}
         className="glass rounded-xl border border-border/50 p-4"
       >
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* Search */}
           <div className="md:col-span-2">
             <div className="relative">
@@ -134,6 +148,20 @@ export default function ProjectsPage() {
               <option value="LARAVEL">Laravel</option>
               <option value="PYTHON">Python</option>
               <option value="STATIC">Static HTML</option>
+            </select>
+          </div>
+
+          {/* Sort */}
+          <div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+            >
+              <option value="name-asc">Nome A-Z</option>
+              <option value="name-desc">Nome Z-A</option>
+              <option value="status">Stato</option>
+              <option value="created">Più recenti</option>
             </select>
           </div>
         </div>

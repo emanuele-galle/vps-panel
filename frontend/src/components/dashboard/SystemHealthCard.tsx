@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { fadeInUp } from '@/lib/motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SystemHealthProps {
   status: 'healthy' | 'warning' | 'critical';
@@ -16,7 +17,36 @@ interface SystemHealthProps {
   containersTotal: number;
 }
 
-export function SystemHealthCard({ health }: { health: SystemHealthProps | null }) {
+export function SystemHealthCardSkeleton() {
+  return (
+    <motion.div variants={fadeInUp}>
+      <Card className="glass border-border/50">
+        <CardContent className="p-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <Skeleton className="h-3 w-8" />
+                  <Skeleton className="h-5 w-12 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
+export function SystemHealthCard({ health, isLoading }: { health: SystemHealthProps | null; isLoading?: boolean }) {
+  if (isLoading) return <SystemHealthCardSkeleton />;
   if (!health) return null;
 
   const config = {

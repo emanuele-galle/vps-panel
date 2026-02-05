@@ -9,6 +9,7 @@ import { it } from 'date-fns/locale';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { fadeInUp } from '@/lib/motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Notification {
   id: string;
@@ -28,7 +29,24 @@ const typeConfig: Record<string, { icon: React.ElementType; color: string }> = {
   INFO: { icon: Info, color: 'text-blue-500' },
 };
 
-export function RecentNotifications({ notifications }: { notifications: Notification[] }) {
+function RecentNotificationsSkeleton() {
+  return (
+    <div className="space-y-2">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="flex items-start gap-3 p-3 rounded-lg">
+          <Skeleton className="h-4 w-4 mt-0.5 rounded-full flex-shrink-0" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-48" />
+            <Skeleton className="h-3 w-20" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function RecentNotifications({ notifications, isLoading }: { notifications: Notification[]; isLoading?: boolean }) {
   return (
     <motion.div variants={fadeInUp}>
       <Card className="glass border-border/50 h-full">
@@ -39,7 +57,9 @@ export function RecentNotifications({ notifications }: { notifications: Notifica
           </div>
         </CardHeader>
         <CardContent className="pb-4">
-          {notifications.length > 0 ? (
+          {isLoading ? (
+            <RecentNotificationsSkeleton />
+          ) : notifications.length > 0 ? (
             <div className="space-y-2">
               {notifications.map((notif, index) => {
                 const tc = typeConfig[notif.type] || typeConfig.INFO;
@@ -52,23 +72,46 @@ export function RecentNotifications({ notifications }: { notifications: Notifica
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.05 }}
                   >
-                    <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors">
-                      <Icon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${tc.color}`} />
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-foreground text-sm truncate">
-                          {notif.title}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                          {notif.message}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true, locale: it })}
-                        </p>
+                    {notif.actionHref ? (
+                      <Link
+                        href={notif.actionHref}
+                        className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors group"
+                      >
+                        <Icon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${tc.color}`} />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-foreground text-sm truncate group-hover:text-primary transition-colors">
+                            {notif.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                            {notif.message}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true, locale: it })}
+                          </p>
+                        </div>
+                        {!notif.read && (
+                          <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1.5" />
+                        )}
+                      </Link>
+                    ) : (
+                      <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-accent/50 transition-colors">
+                        <Icon className={`h-4 w-4 mt-0.5 flex-shrink-0 ${tc.color}`} />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-foreground text-sm truncate">
+                            {notif.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                            {notif.message}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true, locale: it })}
+                          </p>
+                        </div>
+                        {!notif.read && (
+                          <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1.5" />
+                        )}
                       </div>
-                      {!notif.read && (
-                        <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1.5" />
-                      )}
-                    </div>
+                    )}
                   </motion.div>
                 );
               })}

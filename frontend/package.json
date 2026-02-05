@@ -1,7 +1,7 @@
 {
   "name": "vps-panel-frontend",
-  "version": "1.7.0",
-  "description": "VPS Control Panel Frontend",
+  "version": "1.7.1",
+  "description": "VPS Console Frontend - by FODI S.r.l.",
   "private": true,
   "scripts": {
     "dev": "next dev",

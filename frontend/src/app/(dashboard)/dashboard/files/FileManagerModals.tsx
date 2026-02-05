@@ -149,9 +149,11 @@ interface UploadModalProps {
   onFilesChange: (files: File[]) => void;
   onUpload: () => void;
   onClose: () => void;
+  isUploading?: boolean;
+  uploadProgress?: number;
 }
 
-export function UploadModal({ uploadFiles, onFilesChange, onUpload, onClose }: UploadModalProps) {
+export function UploadModal({ uploadFiles, onFilesChange, onUpload, onClose, isUploading, uploadProgress = 0 }: UploadModalProps) {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-lg">
@@ -161,6 +163,7 @@ export function UploadModal({ uploadFiles, onFilesChange, onUpload, onClose }: U
             <Input
               type="file"
               multiple
+              disabled={isUploading}
               onChange={(e) => {
                 if (e.target.files) {
                   onFilesChange(Array.from(e.target.files));
@@ -172,9 +175,25 @@ export function UploadModal({ uploadFiles, onFilesChange, onUpload, onClose }: U
                 Selezionati: {uploadFiles.map(f => f.name).join(', ')}
               </div>
             )}
+            {isUploading && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Caricamento in corso...</span>
+                  <span className="font-mono text-foreground">{uploadProgress}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
             <div className="flex gap-2">
-              <Button onClick={onUpload} className="flex-1">Carica</Button>
-              <Button onClick={onClose} variant="ghost">Annulla</Button>
+              <Button onClick={onUpload} className="flex-1" disabled={isUploading || uploadFiles.length === 0}>
+                {isUploading ? 'Caricamento...' : 'Carica'}
+              </Button>
+              <Button onClick={onClose} variant="ghost" disabled={isUploading}>Annulla</Button>
             </div>
           </div>
         </CardContent>

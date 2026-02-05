@@ -131,9 +131,12 @@ function NotificationItem({
   );
 }
 
+type NotificationFilter = 'all' | 'deploy' | 'alert' | 'system';
+
 export function NotificationDropdown() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState<NotificationFilter>('all');
   const {
     notifications,
     unreadCount,
@@ -163,6 +166,14 @@ export function NotificationDropdown() {
         setUnreadCount(data.count);
       }
     },
+  });
+
+  const filteredNotifications = notifications.filter((n) => {
+    if (filter === 'all') return true;
+    if (filter === 'deploy') return n.source === 'deployment' || n.title?.toLowerCase().includes('deploy');
+    if (filter === 'alert') return n.type === 'warning' || n.type === 'error';
+    if (filter === 'system') return n.source === 'system' || n.source === 'backup' || n.source === 'resource';
+    return true;
   });
 
   const handleAction = (notification: Notification) => {
@@ -223,10 +234,35 @@ export function NotificationDropdown() {
           )}
         </div>
 
+        {/* Filter Tabs */}
+        {notifications.length > 0 && (
+          <div className="flex items-center gap-1 px-3 py-2 border-b border-border/50 overflow-x-auto">
+            {([
+              { key: 'all', label: 'Tutte' },
+              { key: 'deploy', label: 'Deploy' },
+              { key: 'alert', label: 'Alert' },
+              { key: 'system', label: 'Sistema' },
+            ] as const).map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setFilter(key)}
+                className={cn(
+                  'px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap',
+                  filter === key
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-accent hover:text-foreground'
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Notifications List */}
-        {notifications.length > 0 ? (
+        {filteredNotifications.length > 0 ? (
           <ScrollArea className="max-h-[400px]">
-            {notifications.map((notification) => (
+            {filteredNotifications.map((notification) => (
               <NotificationItem
                 key={notification.id}
                 notification={notification}
@@ -239,7 +275,9 @@ export function NotificationDropdown() {
         ) : (
           <div className="py-8 text-center">
             <Bell className="h-10 w-10 mx-auto text-muted-foreground/30" />
-            <p className="mt-2 text-sm text-muted-foreground">Nessuna notifica</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {filter !== 'all' ? 'Nessuna notifica per questo filtro' : 'Nessuna notifica'}
+            </p>
           </div>
         )}
       </DropdownMenuContent>

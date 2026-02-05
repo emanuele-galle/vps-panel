@@ -1,7 +1,7 @@
 {
   "name": "vps-panel",
-  "version": "1.6.0",
-  "description": "Modern, full-featured VPS control panel built with **Node.js**, **TypeScript**, **Next.js**, and **Docker**.",
+  "version": "1.7.1",
+  "description": "VPS Console - Modern VPS control panel built with Node.js, TypeScript, Next.js and Docker",
   "main": "index.js",
   "directories": {
     "doc": "docs"
@@ -10,9 +10,9 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["vps", "panel", "docker", "nextjs", "typescript"],
+  "author": "FODI S.r.l.",
+  "license": "UNLICENSED",
   "type": "commonjs",
   "devDependencies": {
     "husky": "^9.1.7",

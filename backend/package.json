@@ -1,7 +1,7 @@
 {
   "name": "vps-panel-backend",
-  "version": "1.7.0",
-  "description": "VPS Control Panel Backend API",
+  "version": "1.7.1",
+  "description": "VPS Console Backend API - by FODI S.r.l.",
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",

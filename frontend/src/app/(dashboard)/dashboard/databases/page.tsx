@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DatabaseCard } from '@/components/dashboard/DatabaseCard';
 import { CreateDatabaseModal } from '@/components/dashboard/CreateDatabaseModal';
+import { ErrorState } from '@/components/ui/error-state';
 import { useDatabasesStore } from '@/store/databasesStore';
 import { useProjectsStore } from '@/store/projectsStore';
 import { DatabaseType, Database } from '@/types';
@@ -19,6 +20,7 @@ export default function DatabasesPage() {
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [groupBy, setGroupBy] = useState<'project' | 'none'>('project');
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<string>('name-asc');
 
   useEffect(() => {
     fetchDatabases();
@@ -42,15 +44,25 @@ export default function DatabasesPage() {
     fetchDatabases(filters);
   };
 
-  const filteredDatabases = databases.filter((database) => {
-    const matchesSearch =
-      searchQuery === '' ||
-      database.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      database.databaseName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      database.project?.name.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredDatabases = databases
+    .filter((database) => {
+      const matchesSearch =
+        searchQuery === '' ||
+        database.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        database.databaseName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        database.project?.name.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesSearch;
-  });
+      return matchesSearch;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'name-asc': return a.name.localeCompare(b.name);
+        case 'name-desc': return b.name.localeCompare(a.name);
+        case 'type': return a.type.localeCompare(b.type);
+        case 'project': return (a.project?.name || 'zzz').localeCompare(b.project?.name || 'zzz');
+        default: return 0;
+      }
+    });
 
   // Count by type
   const countByType = {
@@ -188,7 +200,7 @@ export default function DatabasesPage() {
 
       {/* Filters and Search */}
       <div className="bg-card rounded-lg border border-border p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div>
             <div className="relative">
@@ -234,6 +246,20 @@ export default function DatabasesPage() {
               <option value="SQLITE">SQLite</option>
             </select>
           </div>
+
+          {/* Sort */}
+          <div>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              <option value="name-asc">Nome A-Z</option>
+              <option value="name-desc">Nome Z-A</option>
+              <option value="type">Tipo</option>
+              <option value="project">Progetto</option>
+            </select>
+          </div>
         </div>
 
         {/* Group Toggle */}
@@ -270,18 +296,12 @@ export default function DatabasesPage() {
 
       {/* Error State */}
       {error && (
-        <div className="bg-destructive/10 border border-destructive/30 text-destructive px-4 py-3 rounded-lg">
-          <p className="font-medium">Errore nel caricamento dei database</p>
-          <p className="text-sm mt-1">{error}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="mt-2"
-          >
-            Riprova
-          </Button>
-        </div>
+        <ErrorState
+          title="Errore nel caricamento dei database"
+          message={error}
+          onRetry={handleRefresh}
+          variant="card"
+        />
       )}
 
       {/* Loading State */}
