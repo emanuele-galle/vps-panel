@@ -53,7 +53,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       } : undefined,
     },
     trustProxy: true,
-    bodyLimit: 524288000, // 500MB (aumentato per backup)
+    bodyLimit: 10485760, // 10MB default (backup routes override to 500MB)
   });
 
   // Security plugins with proper CSP for API

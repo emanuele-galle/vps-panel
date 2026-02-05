@@ -65,7 +65,7 @@ export default async function systemBackupRoutes(app: FastifyInstance) {
 
   // Download backup file using secure download token - rate limited
   app.get('/:id/download', {
-    preHandler: [downloadAuth, rateLimiters.download],
+    preHandler: [downloadAuth as any, rateLimiters.download],
     handler: systemBackupController.downloadBackup.bind(systemBackupController),
   });
 

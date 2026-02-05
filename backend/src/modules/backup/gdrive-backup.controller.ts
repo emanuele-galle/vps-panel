@@ -101,7 +101,7 @@ export class GDriveBackupController {
       });
     } catch (error) {
       request.log.error({ err: error }, 'Backup database failed');
-      return reply.status(500).send({ success: false, error: { code: 'BACKUP_ERROR', message: error instanceof Error ? error.message : 'Unknown error' || 'Errore avvio backup' } });
+      return reply.status(500).send({ success: false, error: { code: 'BACKUP_ERROR', message: error instanceof Error ? error.message : 'Errore avvio backup' } });
     }
   }
 
@@ -163,7 +163,7 @@ export class GDriveBackupController {
       });
     } catch (error) {
       request.log.error({ err: error }, 'Full system backup failed');
-      return reply.status(500).send({ success: false, error: { code: 'BACKUP_ERROR', message: error instanceof Error ? error.message : 'Unknown error' || 'Errore avvio backup' } });
+      return reply.status(500).send({ success: false, error: { code: 'BACKUP_ERROR', message: error instanceof Error ? error.message : 'Errore avvio backup' } });
     }
   }
 

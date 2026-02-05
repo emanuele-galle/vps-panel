@@ -19,8 +19,8 @@ export default async function backupRoutes(app: FastifyInstance) {
   // Download backup file (PUBLIC - uses download token, not JWT)
   app.get('/download/:token', backupController.downloadBackup.bind(backupController));
 
-  // Upload a backup ZIP
-  app.post('/upload', backupController.uploadBackup.bind(backupController));
+  // Upload a backup ZIP (500MB limit for large backups)
+  app.post('/upload', { bodyLimit: 524288000 }, backupController.uploadBackup.bind(backupController));
 
   // Get all backups for current user
   app.get('/', backupController.getBackups.bind(backupController));

@@ -8,7 +8,6 @@ import { maintenanceSchedulerService } from './modules/maintenance/maintenance.s
 import { databaseSchedulerService } from './modules/databases/database.scheduler';
 import { containerSchedulerService } from './modules/docker/container.scheduler';
 import { domainSchedulerService } from './modules/domains/domain.scheduler';
-import { pm2SchedulerService } from './modules/projects/pm2.scheduler';
 import log from './services/logger.service';
 
 async function start() {
@@ -57,10 +56,6 @@ async function start() {
     domainSchedulerService.start(config.SCHEDULE_DOMAIN_SYNC);
     app.log.info(`🌐 Domain scheduler started (${config.SCHEDULE_DOMAIN_SYNC})`);
 
-    // Start PM2 sync scheduler
-    pm2SchedulerService.start(config.SCHEDULE_PM2_SYNC);
-    app.log.info(`⚡ PM2 scheduler started (${config.SCHEDULE_PM2_SYNC})`);
-
     // Graceful shutdown
     const signals: NodeJS.Signals[] = ['SIGINT', 'SIGTERM'];
 
@@ -89,7 +84,6 @@ async function start() {
         databaseSchedulerService.stop();
         containerSchedulerService.stop();
         domainSchedulerService.stop();
-        pm2SchedulerService.stop();
         app.log.info('📊 Sync schedulers stopped');
 
         await app.close();

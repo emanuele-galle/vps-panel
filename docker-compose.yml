@@ -317,7 +317,9 @@ services:
       - "traefik.http.routers.adminer.rule=Host(`db.${PANEL_DOMAIN:-localhost}`)"
       - "traefik.http.routers.adminer.entrypoints=websecure"
       - "traefik.http.routers.adminer.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.adminer.middlewares=security-headers@file,auth-dashboard@file"
+      # IP whitelist: only VPS local + common admin IPs (add your IP here)
+      - "traefik.http.middlewares.adminer-ipwhitelist.ipallowlist.sourcerange=127.0.0.1/32,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+      - "traefik.http.routers.adminer.middlewares=adminer-ipwhitelist,security-headers@file,auth-dashboard@file"
       - "traefik.http.services.adminer.loadbalancer.server.port=8080"
 
   # ==================== N8N POSTGRESQL ====================
@@ -401,9 +403,9 @@ services:
       # Timezone
       GENERIC_TIMEZONE: Europe/Rome
       TZ: Europe/Rome
-      # Code node modules (fix "Module 'crypto' is disallowed" error)
-      NODE_FUNCTION_ALLOW_BUILTIN: "*"
-      NODE_FUNCTION_ALLOW_EXTERNAL: "*"
+      # Code node modules - restricted to necessary builtins only
+      NODE_FUNCTION_ALLOW_BUILTIN: "crypto,url,querystring,path,util,buffer,stream,http,https,zlib,os"
+      NODE_FUNCTION_ALLOW_EXTERNAL: "axios,lodash,moment,date-fns,xml2js,cheerio,jsonwebtoken,uuid"
     depends_on:
       n8n-postgres:
         condition: service_healthy

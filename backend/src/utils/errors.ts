@@ -99,7 +99,7 @@ export function errorHandler(
   }
 
   // Default 500 error
-  reply.status(500).send({
+  return  reply.status(500).send({
     success: false,
     error: {
       code: 'INTERNAL_ERROR',

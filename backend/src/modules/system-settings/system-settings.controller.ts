@@ -86,8 +86,8 @@ class SystemSettingsController {
 
       // Mask secret values
       const maskedGrouped: Record<string, Array<{ key: string; value: string; isSecret: boolean; category?: string }>> = {};
-      for (const [category, settings] of Object.entries(grouped)) {
-        maskedGrouped[category] = settings.map((setting: { key: string; value: string; isSecret: boolean; category?: string }) => ({
+      for (const [category, settings] of Object.entries(grouped) as [string, Array<{ key: string; value: string; isSecret: boolean; category?: string }>][]) {
+        maskedGrouped[category] = settings.map((setting) => ({
           ...setting,
           value: setting.isSecret ? '********' : setting.value,
         }));
@@ -235,7 +235,7 @@ class SystemSettingsController {
 
       reply.code(400).send({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error' || 'Failed to update setting',
+        error: error instanceof Error ? error.message : 'Failed to update setting',
       });
     }
   }
@@ -285,7 +285,7 @@ class SystemSettingsController {
       request.log.error(error);
       reply.code(400).send({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error' || 'Failed to save setting',
+        error: error instanceof Error ? error.message : 'Failed to save setting',
       });
     }
   }
@@ -340,7 +340,7 @@ class SystemSettingsController {
 
       reply.code(400).send({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error' || 'Failed to update settings',
+        error: error instanceof Error ? error.message : 'Failed to update settings',
       });
     }
   }
@@ -376,7 +376,7 @@ class SystemSettingsController {
       request.log.error(error);
       reply.code(400).send({
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error' || 'Failed to delete setting',
+        error: error instanceof Error ? error.message : 'Failed to delete setting',
       });
     }
   }

@@ -69,7 +69,7 @@ class HealthController {
    * Get system-wide health status
    */
   async getSystemHealth(request: FastifyRequest, _reply: FastifyReply): Promise<SystemHealth> {
-    const forceRefresh = request.query && (request.query as { refresh?: string })?.refresh === "true";
+    const forceRefresh = (request.query as { refresh?: string })?.refresh === "true";
     return healthService.getSystemHealth(forceRefresh);
   }
 

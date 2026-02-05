@@ -70,7 +70,7 @@ class EmailService {
           hostingerId = response.data.id;
           usedSpace = response.data.used_space || 0;
         } catch (error) {
-          throw new AppError(500, `Hostinger API error: ${error.response?.data?.message || (error instanceof Error ? error.message : 'Unknown error')}`);
+          throw new AppError(500, `Hostinger API error: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
 
@@ -181,7 +181,7 @@ class EmailService {
             );
           }
         } catch (error) {
-          throw new AppError(500, `Hostinger API error: ${error.response?.data?.message || (error instanceof Error ? error.message : 'Unknown error')}`);
+          throw new AppError(500, `Hostinger API error: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
 
@@ -271,7 +271,7 @@ class EmailService {
       );
     } catch (error) {
       if (error instanceof AppError) throw error;
-      throw new AppError(500, `Failed to change password: ${error.response?.data?.message || (error instanceof Error ? error.message : 'Unknown error')}`);
+      throw new AppError(500, `Failed to change password: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

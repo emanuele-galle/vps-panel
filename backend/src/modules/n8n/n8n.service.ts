@@ -4,7 +4,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import jwt from 'jsonwebtoken';
+import { createHmac } from 'crypto';
 import { config } from '../../config/env';
 import { prisma } from '../../services/prisma.service';
 import { validatePath } from '../../utils/shell-sanitizer';
@@ -535,15 +535,12 @@ export class N8nService {
 
     // Generate JWT token compatible with N8N
     // N8N uses its own user management, so we redirect to the app
-    const token = jwt.sign(
-      {
-        sub: userId,
-        email: userEmail,
-        iat: Math.floor(Date.now() / 1000),
-      },
-      config.JWT_SECRET,
-      { expiresIn: '5m' }
-    );
+    const iat = Math.floor(Date.now() / 1000);
+    const exp = iat + 300; // 5 minutes
+    const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+    const payload = Buffer.from(JSON.stringify({ sub: userId, email: userEmail, iat, exp })).toString('base64url');
+    const signature = createHmac('sha256', config.JWT_SECRET).update(`${header}.${payload}`).digest('base64url');
+    const token = `${header}.${payload}.${signature}`;
 
     return {
       token,

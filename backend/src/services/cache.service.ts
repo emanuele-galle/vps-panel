@@ -12,7 +12,7 @@ import { LRUCache } from 'lru-cache';
 import { redis, CacheTTL } from './redis.service';
 
 // L1 Cache configuration
-const l1Cache = new LRUCache<string, unknown>({
+const l1Cache = new LRUCache<string, NonNullable<unknown>>({
   max: 500,              // Maximum 500 items
   ttl: 1000 * 10,        // 10 seconds default TTL
   updateAgeOnGet: true,  // Reset TTL on access
@@ -52,7 +52,7 @@ export async function getWithCache<T>(
   if (l2Value !== null) {
     stats.l2Hits++;
     // Populate L1 from L2
-    l1Cache.set(key, l2Value, { ttl: l1TtlMs });
+    l1Cache.set(key, l2Value as {}, { ttl: l1TtlMs });
     return l2Value;
   }
   stats.l2Misses++;
@@ -61,7 +61,7 @@ export async function getWithCache<T>(
   const value = await fetcher();
 
   // Populate both caches
-  l1Cache.set(key, value, { ttl: l1TtlMs });
+  l1Cache.set(key, value as {}, { ttl: l1TtlMs });
   await redis.set(key, value, l2TtlSeconds);
 
   return value;

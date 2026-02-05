@@ -70,7 +70,6 @@ const envSchema = z.object({
   SCHEDULE_DATABASE_SYNC: z.string().default('*/10 * * * *'),
   SCHEDULE_CONTAINER_SYNC: z.string().default('*/5 * * * *'),
   SCHEDULE_DOMAIN_SYNC: z.string().default('*/10 * * * *'),
-  SCHEDULE_PM2_SYNC: z.string().default('*/5 * * * *'),
   SCHEDULE_DISCOVERY: z.string().default('*/30 * * * *'),
   SCHEDULE_CREDENTIALS_SYNC: z.string().default('*/5 * * * *'),
   SCHEDULE_RESOURCE_ALERTS_MS: z.string().default('60000').transform(Number),

@@ -59,14 +59,14 @@ class DatabasesController {
     const query = getDatabasesQuerySchema.parse(request.query);
 
     const user = request.user as JwtPayload | undefined;
-    const filters: { projectId?: string; type?: string } = {};
+    const filters: { projectId?: string; type?: import('@prisma/client').DatabaseType } = {};
 
     if (query.projectId) {
       filters.projectId = query.projectId;
     }
 
     if (query.type) {
-      filters.type = query.type;
+      filters.type = query.type as import('@prisma/client').DatabaseType;
     }
 
     const databases = await databasesService.getDatabases(filters, user?.userId, user?.role);

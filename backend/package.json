@@ -5,7 +5,7 @@
   "main": "dist/server.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc || echo TypeScript errors ignored",
+    "build": "tsc",
     "type-check": "tsc --noEmit",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
@@ -29,7 +29,6 @@
   "author": "Your Agency",
   "license": "MIT",
   "dependencies": {
-    "@fastify/compress": "^8.3.1",
     "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.2.0",
     "@fastify/csrf-protection": "^7.1.0",
@@ -54,7 +53,6 @@
     "googleapis": "^166.0.0",
     "ioredis": "^5.9.1",
     "js-yaml": "^4.1.1",
-    "jsonwebtoken": "^9.0.2",
     "lru-cache": "^11.2.4",
     "node-cron": "^4.2.1",
     "node-pty": "^1.0.0",
@@ -75,7 +73,6 @@
     "@types/bcrypt": "^6.0.0",
     "@types/dockerode": "^3.3.24",
     "@types/js-yaml": "^4.0.9",
-    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.19.5",
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.16.0",

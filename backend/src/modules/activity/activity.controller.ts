@@ -1,4 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
+import { LogStatus } from '@prisma/client';
 import { z } from 'zod';
 import { activityService, type ActivityLogFilters } from './activity.service';
 import { AppError } from '../../utils/errors';
@@ -68,7 +69,7 @@ export const activityController = {
     if (query.userId) filters.userId = query.userId;
     if (query.action) filters.action = query.action;
     if (query.resource) filters.resource = query.resource;
-    if (query.status) filters.status = query.status;
+    if (query.status) filters.status = query.status as LogStatus;
     if (query.startDate) filters.startDate = new Date(query.startDate);
     if (query.endDate) filters.endDate = new Date(query.endDate);
 
@@ -241,7 +242,7 @@ export const activityController = {
     const filters: ActivityLogFilters = {};
     if (query.userId) filters.userId = query.userId;
     if (query.resource) filters.resource = query.resource;
-    if (query.status) filters.status = query.status;
+    if (query.status) filters.status = query.status as LogStatus;
     if (query.startDate) filters.startDate = new Date(query.startDate);
     if (query.endDate) filters.endDate = new Date(query.endDate);
 

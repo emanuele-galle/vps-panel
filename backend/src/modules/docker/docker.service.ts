@@ -224,13 +224,13 @@ export class DockerService {
           });
 
           const containerName = containerInfo.Names?.[0]?.replace(/^\//, '') || containerInfo.Id.substring(0, 12);
-          const logString = Buffer.isBuffer(logs) ? stripDockerHeaders(logs) : logs.toString('utf8');
+          const logString = Buffer.isBuffer(logs) ? stripDockerHeaders(logs) : String(logs);
 
           // Format logs with container name prefix
           return logString
             .split('\n')
-            .filter(line => line.trim())
-            .map(line => `[${containerName}] ${line}`)
+            .filter((line: string) => line.trim())
+            .map((line: string) => `[${containerName}] ${line}`)
             .join('\n');
         } catch (_err) {
           return `[${containerInfo.Names?.[0] || containerInfo.Id}] Error getting logs`;
@@ -238,7 +238,7 @@ export class DockerService {
       });
 
       const allLogs = await Promise.all(logsPromises);
-      return allLogs.filter(l => l).join('\n\n') || 'Nessun log disponibile.';
+      return allLogs.filter((l: string) => l).join('\n\n') || 'Nessun log disponibile.';
     } catch (error) {
       throw new Error(`Failed to get logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -478,7 +478,7 @@ export class DockerService {
         tail,
         timestamps: true,
       });
-      return Buffer.isBuffer(logs) ? stripDockerHeaders(logs) : logs.toString('utf-8');
+      return Buffer.isBuffer(logs) ? stripDockerHeaders(logs) : String(logs);
     } catch (error) {
       throw new Error(`Failed to get container logs: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

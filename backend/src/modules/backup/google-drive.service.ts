@@ -91,7 +91,7 @@ export class GoogleDriveService {
 
       log.info(`[Google Drive] Caricamento backup ${backup.originalName} (${fileStats.size} bytes)...`);
 
-      const response = await this.drive.files.create({
+      const response = await this.drive!.files.create({
         requestBody: fileMetadata,
         media: media,
         fields: 'id, name, size, webViewLink, webContentLink',
@@ -145,13 +145,13 @@ export class GoogleDriveService {
     }
 
     try {
-      const response = await this.drive.files.create({
+      const response = await this.drive!.files.create({
         requestBody: fileMetadata,
         fields: 'id, name',
       });
 
       log.info(`[Google Drive] Cartella creata: ${response.data.name} (${response.data.id})`);
-      return response.data.id;
+      return response.data.id || '';
     } catch (error) {
       log.error('[Google Drive] Errore creazione cartella:', error);
       throw new Error(`Errore durante creazione cartella: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -167,7 +167,7 @@ export class GoogleDriveService {
     }
 
     try {
-      await this.drive.files.delete({ fileId });
+      await this.drive!.files.delete({ fileId });
       log.info(`[Google Drive] File eliminato: ${fileId}`);
     } catch (error) {
       log.error('[Google Drive] Errore eliminazione file:', error);
@@ -184,7 +184,7 @@ export class GoogleDriveService {
     }
 
     try {
-      const response = await this.drive.files.get({
+      const response = await this.drive!.files.get({
         fileId,
         fields: 'id, name, size, mimeType, createdTime, modifiedTime, webViewLink, webContentLink',
       });
@@ -207,7 +207,7 @@ export class GoogleDriveService {
     try {
       const query = folderId ? `'${folderId}' in parents` : undefined;
 
-      const response = await this.drive.files.list({
+      const response = await this.drive!.files.list({
         q: query,
         pageSize,
         fields: 'files(id, name, size, mimeType, createdTime, modifiedTime)',
