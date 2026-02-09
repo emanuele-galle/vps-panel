@@ -1,0 +1,7 @@
+# TLS Configuration for barber99.it
+# Uses Cloudflare Origin Certificate
+
+tls:
+  certificates:
+    - certFile: /etc/traefik/certs/barber99.it.pem
+      keyFile: /etc/traefik/certs/barber99.it.key

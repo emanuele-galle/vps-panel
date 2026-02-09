@@ -1,3 +1,8 @@
+// BigInt JSON serialization support - PostgreSQL returns bigint for sizes
+// Safe because all our BigInt values (file/db sizes) are within Number.MAX_SAFE_INTEGER
+(BigInt.prototype as any).toJSON = function () {
+  return Number(this);
+};
 import { buildApp } from './app';
 import { config } from './config/env';
 import { schedulerService } from './modules/backup/scheduler.service';

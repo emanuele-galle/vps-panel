@@ -22,7 +22,7 @@ export const COOKIE_NAMES = {
  * In production, use .fodivps1.cloud to share cookies between
  * fodivps1.cloud (frontend) and api.fodivps1.cloud (backend)
  */
-const COOKIE_DOMAIN = isProduction ? '.fodivps1.cloud' : undefined;
+const COOKIE_DOMAIN = isProduction ? (process.env.COOKIE_DOMAIN || '.fodivps2.cloud') : undefined;
 
 /**
  * Common cookie options for secure cookies

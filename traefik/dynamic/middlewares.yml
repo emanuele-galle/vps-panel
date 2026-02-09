@@ -22,7 +22,7 @@ http:
         stsSeconds: 31536000
         customFrameOptionsValue: "SAMEORIGIN"
         # CSP - Content Security Policy
-        contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://www.googletagmanager.com https://challenges.cloudflare.com https://www.youtube.com https://player.vimeo.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.fodivps1.cloud https://storage.fodivps1.cloud wss://fodivps1.cloud wss://api.fodivps1.cloud https://maps.googleapis.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://vimeo.com https://player.vimeo.com; frame-src 'self' https://maps.google.com https://www.google.com https://maps.googleapis.com https://*.google.com https://player.vimeo.com https://www.youtube.com https://challenges.cloudflare.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
+        contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://www.googletagmanager.com https://challenges.cloudflare.com https://www.youtube.com https://player.vimeo.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://api.fodivps2.cloud https://storage.fodivps2.cloud wss://fodivps2.cloud wss://api.fodivps2.cloud https://maps.googleapis.com https://www.google-analytics.com https://analytics.google.com https://www.googletagmanager.com https://vimeo.com https://player.vimeo.com; frame-src 'self' https://maps.google.com https://www.google.com https://maps.googleapis.com https://*.google.com https://player.vimeo.com https://www.youtube.com https://challenges.cloudflare.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests;"
         # Referrer Policy
         referrerPolicy: "strict-origin-when-cross-origin"
         # Permissions Policy
@@ -32,21 +32,21 @@ http:
     cors-headers:
       headers:
         accessControlAllowOriginList:
-          - "https://fodivps1.cloud"
-          - "https://api.fodivps1.cloud"
-          - "https://tattoo.fodivps1.cloud"
-          - "https://app.tattoo.fodivps1.cloud"
-          - "https://media.tattoo.fodivps1.cloud"
+          - "https://fodivps2.cloud"
+          - "https://api.fodivps2.cloud"
+          - "https://tattoo.fodivps2.cloud"
+          - "https://app.tattoo.fodivps2.cloud"
+          - "https://media.tattoo.fodivps2.cloud"
           - "https://notaio.fodisrl.it"
-          - "https://maison.fodivps1.cloud"
-          - "https://app.maison.fodivps1.cloud"
-          - "https://admin.maison.fodivps1.cloud"
-          - "https://api.maison.fodivps1.cloud"
-          - "https://eccellenze-italiane.fodivps1.cloud"
-          - "https://fodi.fodivps1.cloud"
-          - "https://storage.fodi.fodivps1.cloud"
-          - "https://n8n.fodivps1.cloud"
-          - "https://storage.fodivps1.cloud"
+          - "https://maison.fodivps2.cloud"
+          - "https://app.maison.fodivps2.cloud"
+          - "https://admin.maison.fodivps2.cloud"
+          - "https://api.maison.fodivps2.cloud"
+          - "https://eccellenze-italiane.fodivps2.cloud"
+          - "https://fodi.fodivps2.cloud"
+          - "https://storage.fodi.fodivps2.cloud"
+          - "https://n8n.fodivps2.cloud"
+          - "https://storage.fodivps2.cloud"
         accessControlAllowMethods:
           - "GET"
           - "POST"
