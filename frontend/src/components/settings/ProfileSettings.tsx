@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuthStore } from '@/store/authStore';
+import { authApi } from '@/lib/api';
 
 export function ProfileSettings() {
   const { user } = useAuthStore();
@@ -61,8 +62,13 @@ export function ProfileSettings() {
     setIsLoading(true);
 
     try {
-      // TODO: Implement API call to update profile
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const response = await authApi.updateProfile({
+        name: formData.name,
+        email: formData.email,
+      });
+      if (response.data.data?.user) {
+        useAuthStore.getState().setUser(response.data.data.user);
+      }
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
     } catch (error: any) {

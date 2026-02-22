@@ -4,11 +4,6 @@ Modern, full-featured VPS control panel built with **Node.js**, **TypeScript**, 
 
 🇮🇹 **Interfaccia completamente in Italiano**
 
-## 🌐 Live Demo
-
-- **Frontend**: https://fodivps1.cloud
-- **Backend API**: https://api.fodivps1.cloud
-
 ## 🚀 Features
 
 - **Project Management**: Create and manage multiple projects with Docker isolation
@@ -22,11 +17,17 @@ Modern, full-featured VPS control panel built with **Node.js**, **TypeScript**, 
 - **Activity Logs**: Complete audit trail of all actions
 - **System Settings**: Advanced system configuration with search, collapsible categories
 - **Italian Localization**: Full UI translation to Italian
+- **Claude Code Integration**: AI-assisted development and project scaffolding
+- **Template Library**: Reusable project templates with components
+- **Multi-VPS Management**: Deploy and manage across multiple instances
+- **N8N Workflows**: Automation workflow management
+- **Automated Deployments**: Zero-downtime deploys with rollback support
+- **Notification System**: Configurable alerts via email/webhooks
 
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Node.js 20** + **TypeScript**
+- **Node.js 24** + **TypeScript**
 - **Fastify** - Fast and low overhead web framework
 - **Prisma** - Type-safe ORM
 - **PostgreSQL** - Main database
@@ -35,7 +36,7 @@ Modern, full-featured VPS control panel built with **Node.js**, **TypeScript**, 
 - **Socket.io** - Real-time WebSocket
 
 ### Frontend
-- **Next.js 14** - React framework with App Router
+- **Next.js 16** - React framework with App Router
 - **TypeScript** - Type safety
 - **Tailwind CSS** - Utility-first CSS
 - **Zustand** - State management
@@ -351,23 +352,22 @@ For support, check:
 3. Docker/Traefik logs
 4. Prisma documentation
 
-## 🆕 Recent Changes (November 2025)
+## 🆕 Recent Changes
 
-### v2.0 - Domain Deployment & Italian UI
-
-- **Domain-based Deployment**: Now deployed at https://fodivps1.cloud with HTTPS via Traefik
-- **Italian Localization**: Full UI translation to Italian language
-- **System Settings Page**:
-  - Search bar to filter settings
-  - Collapsible categories
-  - Single field reset
-  - Modified field indicators
-  - Formatted labels
-- **Database Updates**: Added `backup_uploads` and `filebrowser_instances` tables
-- **Bug Fixes**: Fixed double API prefix issue, resolved Prisma schema sync
+### v1.7.1 (February 2026)
+- **Node.js 24** + **Next.js 16** runtime upgrade
+- **Claude Code Integration**: AI-assisted development module
+- **Multi-VPS Support**: Manage multiple VPS instances
+- **Template Library**: Reusable project templates
+- **Deploy System**: Automated deployment with rollback
+- **Notification System**: Configurable alerts and notifications
+- **20+ Backend Modules**: Auth, projects, Docker, databases, domains, monitoring, backup, email, N8N, and more
+- **14 Zustand Stores**: Comprehensive frontend state management
+- **Error Tracking**: Client-side error reporting to ActivityLog
+- **CI/CD Pipeline**: Automated testing and deployment via GitHub Actions
 
 ---
 
-**Built with ❤️ for your web agency**
+**Built with ❤️ by FODI S.r.l.**
 
-**Last Updated**: 2025-11-21
+**Last Updated**: 2026-02-22

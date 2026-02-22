@@ -65,6 +65,45 @@ class HealthController {
       timestamp: new Date().toISOString(),
     });
   }
+
+  /**
+   * POST /api/health/client-errors
+   * Report client-side errors (no auth required)
+   */
+  async reportClientError(request: FastifyRequest, reply: FastifyReply): Promise<any> {
+    const { message, stack, componentStack, url, userAgent } = request.body as {
+      message: string;
+      stack?: string;
+      componentStack?: string;
+      url?: string;
+      userAgent?: string;
+    };
+
+    try {
+      await prisma.activityLog.create({
+        data: {
+          action: 'CLIENT_ERROR',
+          resource: 'frontend',
+          description: message.substring(0, 500),
+          metadata: {
+            stack: stack?.substring(0, 2000),
+            componentStack: componentStack?.substring(0, 2000),
+            url,
+          },
+          status: 'ERROR',
+          ipAddress: request.ip,
+          userAgent: userAgent || request.headers['user-agent'] || undefined,
+        },
+      });
+
+      return reply.status(201).send({ success: true });
+    } catch (error) {
+      // Don't fail the error report itself
+      request.log.error({ err: error }, 'Failed to save client error');
+      return reply.status(201).send({ success: true });
+    }
+  }
+
   /**
    * Get system-wide health status
    */

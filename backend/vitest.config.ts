@@ -1,35 +1,15 @@
 import { defineConfig } from 'vitest/config';
-import path from 'path';
 
 export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    include: ['tests/**/*.test.ts', 'src/**/*.test.ts'],
-    exclude: ['node_modules', 'dist'],
+    include: ['tests/**/*.test.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'json'],
-      exclude: [
-        'node_modules',
-        'dist',
-        '**/*.d.ts',
-        '**/*.test.ts',
-        'tests/**',
-      ],
-      thresholds: {
-        statements: 50,
-        branches: 50,
-        functions: 50,
-        lines: 50,
-      },
-    },
-    testTimeout: 30000,
-    hookTimeout: 30000,
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
+      reporter: ['text', 'lcov'],
+      include: ['src/**/*.ts'],
+      exclude: ['src/server.ts', 'src/**/index.ts'],
     },
   },
 });

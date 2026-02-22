@@ -30,6 +30,11 @@ const updatePasswordSchema = z.object({
   newPassword: z.string().min(8).max(100),
 });
 
+const updateProfileSchema = z.object({
+  name: z.string().min(2).max(100).optional(),
+  email: z.string().email().optional(),
+});
+
 const preferencesSchema = z.object({
   theme: z.enum(['light', 'dark', 'system']).optional(),
   language: z.string().min(2).max(5).optional(),
@@ -250,6 +255,21 @@ export class AuthController {
     const { userId } = request.user as JwtPayload;
 
     const user = await authService.getUserById(userId);
+
+    return reply.send({
+      success: true,
+      data: { user },
+    });
+  }
+
+  /**
+   * PUT /api/auth/profile
+   */
+  async updateProfile(request: FastifyRequest, reply: FastifyReply) {
+    const { userId } = request.user as JwtPayload;
+    const body = updateProfileSchema.parse(request.body);
+
+    const user = await authService.updateProfile(userId, body);
 
     return reply.send({
       success: true,

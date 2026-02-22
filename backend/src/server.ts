@@ -91,6 +91,14 @@ async function start() {
         domainSchedulerService.stop();
         app.log.info('📊 Sync schedulers stopped');
 
+        // Close database and cache connections
+        const { prisma } = await import('./services/prisma.service');
+        const { redis } = await import('./services/redis.service');
+        await prisma.$disconnect();
+        app.log.info('🗄️ Prisma disconnected');
+        await redis.disconnect();
+        app.log.info('📮 Redis disconnected');
+
         await app.close();
         process.exit(0);
       });

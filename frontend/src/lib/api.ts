@@ -157,6 +157,9 @@ export const authApi = {
 
   updatePassword: (data: { currentPassword: string; newPassword: string }) =>
     api.put<ApiResponse>('/auth/password', data),
+
+  updateProfile: (data: { name?: string; email?: string }) =>
+    api.put<ApiResponse>('/auth/profile', data),
 };
 
 // Monitoring API

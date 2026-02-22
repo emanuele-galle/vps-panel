@@ -434,6 +434,50 @@ export class AuthService {
 
 
   /**
+   * Update user profile (name and email)
+   */
+  async updateProfile(userId: string, data: { name?: string; email?: string }) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    // If email is being changed, check for duplicates
+    if (data.email && data.email !== user.email) {
+      const existing = await prisma.user.findUnique({
+        where: { email: data.email },
+      });
+      if (existing) {
+        throw new ConflictError('Email already in use');
+      }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(data.name && { name: data.name }),
+        ...(data.email && { email: data.email }),
+      },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        twoFactorEnabled: true,
+        createdAt: true,
+        lastLoginAt: true,
+      },
+    });
+
+    return updated;
+  }
+
+
+  /**
    * Get user preferences
    */
   async getPreferences(userId: string) {

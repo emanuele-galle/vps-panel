@@ -152,6 +152,11 @@ export default async function authRoutes(app: FastifyInstance) {
     handler: authController.me.bind(authController),
   });
 
+  app.put('/profile', {
+    preHandler: authenticate,
+    handler: authController.updateProfile.bind(authController),
+  });
+
   // 2FA routes
   app.post('/2fa/setup', {
     preHandler: authenticate,

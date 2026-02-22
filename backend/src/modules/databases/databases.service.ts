@@ -225,6 +225,11 @@ class DatabasesService {
     try {
       const database = await prisma.database.findUnique({
         where: { id },
+        include: {
+          project: {
+            select: { slug: true },
+          },
+        },
       });
 
       if (!database) {
@@ -234,8 +239,21 @@ class DatabasesService {
       const updateData: any = {};
 
       if (data.password) {
+        // Get old password for container update (needed for auth)
+        const oldPassword = this.decryptPassword(database.password);
+
         updateData.password = encryptionService.encrypt(data.password);
-        // TODO: Update password in running container
+
+        // Update password in running container
+        try {
+          await this.updateContainerPassword(database, oldPassword, data.password);
+        } catch (containerError) {
+          log.warn(
+            { databaseId: id, type: database.type },
+            `Failed to update password in container: ${containerError instanceof Error ? containerError.message : 'Unknown error'}`
+          );
+          // Continue anyway - the panel record will be updated
+        }
       }
 
       const updatedDatabase = await prisma.database.update({
@@ -302,6 +320,52 @@ class DatabasesService {
       if (error instanceof AppError) throw error;
       throw new AppError(500, `Failed to delete database: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  /**
+   * Update password in running database container
+   */
+  private async updateContainerPassword(
+    database: Database & { project: { slug: string } },
+    oldPassword: string,
+    newPassword: string
+  ): Promise<void> {
+    const containerName = `${database.project.slug}_${database.databaseName}`;
+
+    // Escape single quotes in passwords for shell safety
+    const escapeShell = (str: string) => str.replace(/'/g, "'\\''");
+    const escapedNew = escapeShell(newPassword);
+    const escapedOld = escapeShell(oldPassword);
+    const escapedUser = escapeShell(database.username);
+
+    let command: string;
+
+    switch (database.type) {
+      case 'POSTGRESQL':
+        command = `docker exec ${containerName} psql -U ${escapedUser} -c "ALTER USER \\"${escapedUser}\\" WITH PASSWORD '${escapedNew}'"`;
+        break;
+      case 'MYSQL':
+        command = `docker exec ${containerName} mysql -u root -p'${escapedOld}' -e "ALTER USER '${escapedUser}'@'%' IDENTIFIED BY '${escapedNew}'; FLUSH PRIVILEGES;"`;
+        break;
+      case 'MONGODB':
+        command = `docker exec ${containerName} mongosh admin -u '${escapedUser}' -p '${escapedOld}' --eval "db.changeUserPassword('${escapedUser}', '${escapedNew}')"`;
+        break;
+      case 'REDIS':
+        command = `docker exec ${containerName} redis-cli -a '${escapedOld}' CONFIG SET requirepass '${escapedNew}'`;
+        break;
+      case 'SQLITE':
+        return; // No container for SQLite
+      default:
+        log.warn({ type: database.type }, 'Unsupported database type for container password update');
+        return;
+    }
+
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+
+    await execAsync(command, { timeout: 15000 });
+    log.info({ databaseId: database.id, type: database.type }, 'Container password updated successfully');
   }
 
   /**

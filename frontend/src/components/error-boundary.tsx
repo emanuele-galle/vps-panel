@@ -27,7 +27,31 @@ export class ErrorBoundary extends React.Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
-    // TODO: Log to external service (Sentry, etc.)
+    
+    // Report error to backend
+    this.reportError(error, errorInfo);
+  }
+
+  private reportError(error: Error, errorInfo: React.ErrorInfo) {
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      fetch(`${apiUrl}/health/client-errors`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: error.message,
+          stack: error.stack,
+          componentStack: errorInfo.componentStack,
+          url: typeof window !== 'undefined' ? window.location.href : undefined,
+          userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : undefined,
+        }),
+        credentials: 'include',
+      }).catch(() => {
+        // Silently fail - don't cause more errors while handling an error
+      });
+    } catch {
+      // Silently fail
+    }
   }
 
   handleRetry = () => {
