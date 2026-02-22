@@ -34,7 +34,13 @@ const envSchema = z.object({
   // Traefik
   TRAEFIK_NETWORK: z.string().default('traefik-public'),
   PREVIEW_DOMAIN: z.string(),
-  PANEL_DOMAIN: z.string().optional(),
+  PANEL_DOMAIN: z.string(),
+
+  // Google Drive backup folder override (default: derived from PANEL_DOMAIN)
+  GDRIVE_BACKUP_FOLDER: z.string().optional(),
+
+  // N8N webhook base URL
+  N8N_WEBHOOK_BASE_URL: z.string().url().optional(),
 
   // Hostinger API
   HOSTINGER_API_KEY: z.string().optional(),

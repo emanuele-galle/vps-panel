@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import api from "@/lib/api";
+import { gdriveBackupFolder } from "@/lib/env";
 
 interface BackupJob {
   id: string;
@@ -384,7 +385,7 @@ export function GDriveBackupSection() {
                   File su Google Drive
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  VPS-fodivps1-backups/{currentFolder || "/"}
+                  {gdriveBackupFolder}/{currentFolder || "/"}
                 </p>
               </div>
             </div>

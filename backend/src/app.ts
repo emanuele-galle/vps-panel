@@ -160,7 +160,7 @@ export async function buildApp(): Promise<FastifyInstance> {
         version: '1.7.0',
       },
       servers: [
-        { url: 'https://api.fodivps1.cloud', description: 'Production' },
+        { url: `https://api.${config.PANEL_DOMAIN}`, description: 'Production' },
         { url: 'http://localhost:3001', description: 'Development' }
       ],
       components: {

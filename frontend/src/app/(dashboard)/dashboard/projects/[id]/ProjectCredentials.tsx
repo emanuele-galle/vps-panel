@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { getFileBrowserUrl, getAdminerUrl } from './utils';
+import { panelDomain } from '@/lib/env';
 
 interface ProjectCredentialsProps {
   project: any;
@@ -535,7 +536,7 @@ function InfrastructureCredentialsCard({ project, projectDatabases, showPassword
                 <span className="text-sm text-muted-foreground">URL:</span>
                 <div className="flex items-center gap-1">
                   <a href={getFileBrowserUrl(project)} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate max-w-[200px]">
-                    files.fodivps1.cloud
+                    {`files.${panelDomain}`}
                   </a>
                   <CopyButton text={getFileBrowserUrl(project)} label="fb-url" copiedText={copiedText} onCopy={onCopy} />
                 </div>
@@ -543,17 +544,17 @@ function InfrastructureCredentialsCard({ project, projectDatabases, showPassword
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Username:</span>
                 <div className="flex items-center gap-1">
-                  <span className="text-sm font-mono text-foreground">emanuelegalle@gmail.com</span>
-                  <CopyButton text="emanuelegalle@gmail.com" label="fb-user" copiedText={copiedText} onCopy={onCopy} />
+                  <span className="text-sm font-mono text-foreground">{process.env.NEXT_PUBLIC_FILEBROWSER_USERNAME || 'admin'}</span>
+                  <CopyButton text={process.env.NEXT_PUBLIC_FILEBROWSER_USERNAME || 'admin'} label="fb-user" copiedText={copiedText} onCopy={onCopy} />
                 </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">Password:</span>
                 <div className="flex items-center gap-1">
                   <span className="text-sm font-mono text-foreground">
-                    {showPasswords ? 'Achille347Secure' : '••••••••••••••'}
+                    {showPasswords ? (process.env.NEXT_PUBLIC_FILEBROWSER_PASSWORD || '••••••••') : '••••••••••••••'}
                   </span>
-                  <CopyButton text="Achille347Secure" label="fb-pass" copiedText={copiedText} onCopy={onCopy} />
+                  <CopyButton text={process.env.NEXT_PUBLIC_FILEBROWSER_PASSWORD || ''} label="fb-pass" copiedText={copiedText} onCopy={onCopy} />
                 </div>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-border mt-2">

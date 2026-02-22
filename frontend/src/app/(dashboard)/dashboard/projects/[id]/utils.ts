@@ -1,4 +1,5 @@
 import { File, FileText, Image, Video } from 'lucide-react';
+import { adminerUrl, fileBrowserBaseUrl } from '@/lib/env';
 
 export const getFileIcon = (filename: string) => {
   const ext = filename.split('.').pop()?.toLowerCase();
@@ -45,7 +46,6 @@ export const getTemplateLabel = (template: string) => {
 };
 
 export const getAdminerUrl = (db: any) => {
-  const baseUrl = 'https://adminer.fodivps1.cloud';
   const params = new URLSearchParams();
 
   switch (db.type) {
@@ -65,9 +65,9 @@ export const getAdminerUrl = (db: any) => {
   params.set('username', db.username);
   params.set('db', db.databaseName);
 
-  return `${baseUrl}/?${params.toString()}`;
+  return `${adminerUrl}/?${params.toString()}`;
 };
 
 export const getFileBrowserUrl = (project: any) => {
-  return `https://files.fodivps1.cloud/files/${project?.path?.split('/').pop() || project?.slug}`;
+  return `${fileBrowserBaseUrl}/files/${project?.path?.split('/').pop() || project?.slug}`;
 };

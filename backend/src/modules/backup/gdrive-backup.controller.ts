@@ -6,6 +6,13 @@ import { safeExec } from '../../utils/shell-sanitizer';
 
 const LOGS_DIR = '/opt/backups/logs';
 
+/** Derive GDrive backup folder from env or PANEL_DOMAIN */
+function getGDriveFolder(): string {
+  if (process.env.GDRIVE_BACKUP_FOLDER) return process.env.GDRIVE_BACKUP_FOLDER;
+  const domain = process.env.PANEL_DOMAIN || 'localhost';
+  return `VPS-${domain.replace(/\./g, '-')}-backups`;
+}
+
 // Max age for completed jobs before cleanup (1 hour)
 const JOB_MAX_AGE_MS = 60 * 60 * 1000;
 
@@ -258,9 +265,9 @@ export class GDriveBackupController {
         success: true,
         data: {
           schedules: [
-            { type: 'databases', description: 'Backup database PostgreSQL/MySQL', schedule: 'Giornaliero alle 03:00', destination: 'Google Drive: VPS-fodivps1-backups/databases/', ...dbTimer },
-            { type: 'full-system', description: 'Backup completo sistema (progetti, config, home)', schedule: 'Domenica alle 05:00', destination: 'Google Drive: VPS-fodivps1-backups/full-system-backup/', ...fullTimer },
-            { type: 'configs', description: 'Backup configurazioni sistema', schedule: 'Domenica alle 04:00', destination: 'Google Drive: VPS-fodivps1-backups/configs/', ...configTimer },
+            { type: 'databases', description: 'Backup database PostgreSQL/MySQL', schedule: 'Giornaliero alle 03:00', destination: `Google Drive: ${getGDriveFolder()}/databases/`, ...dbTimer },
+            { type: 'full-system', description: 'Backup completo sistema (progetti, config, home)', schedule: 'Domenica alle 05:00', destination: `Google Drive: ${getGDriveFolder()}/full-system-backup/`, ...fullTimer },
+            { type: 'configs', description: 'Backup configurazioni sistema', schedule: 'Domenica alle 04:00', destination: `Google Drive: ${getGDriveFolder()}/configs/`, ...configTimer },
           ],
           retention: '30 giorni',
         },
@@ -283,7 +290,7 @@ export class GDriveBackupController {
         });
       }
 
-      const remotePath = 'gdrive:VPS-fodivps1-backups/' + folder;
+      const remotePath = `gdrive:${getGDriveFolder()}/` + folder;
 
       // Use safeExec with array args instead of exec with string concatenation
       const result = await safeExec('docker', [

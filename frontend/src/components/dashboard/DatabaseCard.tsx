@@ -49,7 +49,7 @@ export function DatabaseCard({ database }: DatabaseCardProps) {
 
   // Generate Adminer URL with pre-filled credentials
   const getAdminerUrl = () => {
-    const baseUrl = 'https://adminer.fodivps1.cloud';
+    const baseUrl = `https://db.${process.env.NEXT_PUBLIC_PANEL_DOMAIN || 'localhost'}`;
     const params = new URLSearchParams();
 
     switch (database.type) {

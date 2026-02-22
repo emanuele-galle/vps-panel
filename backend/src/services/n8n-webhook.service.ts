@@ -7,7 +7,7 @@ import axios, { AxiosError } from "axios";
 import log from '../services/logger.service';
 
 // Configuration from environment
-const N8N_WEBHOOK_BASE_URL = process.env.N8N_WEBHOOK_BASE_URL || "https://n8n.fodivps1.cloud/webhook";
+const N8N_WEBHOOK_BASE_URL = process.env.N8N_WEBHOOK_BASE_URL || `https://n8n.${process.env.PANEL_DOMAIN || 'localhost'}/webhook`;
 const N8N_WEBHOOK_TIMEOUT = parseInt(process.env.N8N_WEBHOOK_TIMEOUT || "10000", 10);
 
 // Webhook endpoints for different events

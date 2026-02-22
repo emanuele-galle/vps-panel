@@ -1,6 +1,7 @@
 import cron from 'node-cron';
 import { prisma } from '../../services/prisma.service';
 import { dockerService } from '../docker/docker.service';
+import { config } from '../../config/env';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
@@ -317,7 +318,7 @@ export class DomainSchedulerService {
       data: {
         id: `dom_${projectSlug.replace(/-/g, '_')}_${Date.now()}_${Math.random().toString(36).substring(7)}`,
         domain,
-        type: domain.endsWith('.fodivps2.cloud') ? 'PREVIEW' : 'CUSTOM',
+        type: domain.endsWith(`.${config.PREVIEW_DOMAIN}`) ? 'PREVIEW' : 'CUSTOM',
         status: 'ACTIVE',
         sslEnabled,
         sslProvider: sslEnabled ? 'LETSENCRYPT' : undefined,

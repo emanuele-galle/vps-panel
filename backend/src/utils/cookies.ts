@@ -19,10 +19,10 @@ export const COOKIE_NAMES = {
 
 /**
  * Cookie domain for cross-subdomain sharing
- * In production, use .fodivps1.cloud to share cookies between
- * fodivps1.cloud (frontend) and api.fodivps1.cloud (backend)
+ * In production, use .PANEL_DOMAIN to share cookies between
+ * PANEL_DOMAIN (frontend) and api.PANEL_DOMAIN (backend)
  */
-const COOKIE_DOMAIN = isProduction ? (process.env.COOKIE_DOMAIN || '.fodivps2.cloud') : undefined;
+const COOKIE_DOMAIN = isProduction ? (process.env.COOKIE_DOMAIN || `.${config.PANEL_DOMAIN}`) : undefined;
 
 /**
  * Common cookie options for secure cookies

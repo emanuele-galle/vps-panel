@@ -56,11 +56,11 @@ export function SMTPConfig() {
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">Username</Label>
           <div className="flex gap-2">
-            <Input value="noreply@fodisrl.it" readOnly className="font-mono text-sm" />
+            <Input value={process.env.NEXT_PUBLIC_SMTP_USER || ''} readOnly className="font-mono text-sm" />
             <Button
               variant="outline"
               size="sm"
-              onClick={() => copyToClipboard('noreply@fodisrl.it', 'username')}
+              onClick={() => copyToClipboard(process.env.NEXT_PUBLIC_SMTP_USER || '', 'username')}
             >
               {copiedField === 'username' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </Button>
@@ -69,11 +69,11 @@ export function SMTPConfig() {
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">Password</Label>
           <div className="flex gap-2">
-            <Input value="Achille347!" type="password" readOnly className="font-mono text-sm" />
+            <Input value={process.env.NEXT_PUBLIC_SMTP_PASSWORD || ''} type="password" readOnly className="font-mono text-sm" />
             <Button
               variant="outline"
               size="sm"
-              onClick={() => copyToClipboard('Achille347!', 'password')}
+              onClick={() => copyToClipboard(process.env.NEXT_PUBLIC_SMTP_PASSWORD || '', 'password')}
             >
               {copiedField === 'password' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
             </Button>

@@ -247,7 +247,7 @@ export function SystemBackupSettings() {
       }
 
       // 2. Usa il download token per scaricare il file
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.fodivps1.cloud/api';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
       const downloadUrl = `${apiUrl}/system-backup/${backup.id}/download?token=${encodeURIComponent(downloadToken)}`;
 
       // Apri in una nuova finestra per avviare il download
