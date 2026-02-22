@@ -43,6 +43,26 @@ api.interceptors.request.use(
 
 // Track if we're already refreshing to prevent multiple refresh attempts
 let isRefreshing = false;
+// Queue of requests waiting for token refresh
+let failedQueue: Array<{
+  resolve: (value: any) => void;
+  reject: (reason?: any) => void;
+  config: InternalAxiosRequestConfig;
+}> = [];
+
+// Routes that should never trigger a token refresh (to prevent loops)
+const REFRESH_SKIP_ROUTES = ['/auth/login', '/auth/refresh'];
+
+function processQueue(error: any = null) {
+  failedQueue.forEach(({ resolve, reject, config }) => {
+    if (error) {
+      reject(error);
+    } else {
+      resolve(api(config));
+    }
+  });
+  failedQueue = [];
+}
 
 // Response interceptor - handle errors and refresh token
 api.interceptors.response.use(
@@ -52,17 +72,20 @@ api.interceptors.response.use(
 
     // Handle 401 Unauthorized
     if (error.response?.status === 401 && !originalRequest._retry) {
-      // Skip refresh attempt for auth endpoints to prevent loops
-      if (originalRequest.url?.includes('/auth/')) {
-        return Promise.reject(error);
-      }
-
-      // Prevent multiple simultaneous refresh attempts
-      if (isRefreshing) {
+      // Skip refresh only for login/refresh endpoints to prevent loops
+      if (REFRESH_SKIP_ROUTES.some(route => originalRequest.url?.includes(route))) {
         return Promise.reject(error);
       }
 
       originalRequest._retry = true;
+
+      // If already refreshing, queue this request
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject, config: originalRequest });
+        });
+      }
+
       isRefreshing = true;
 
       try {
@@ -70,11 +93,14 @@ api.interceptors.response.use(
         await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
 
         isRefreshing = false;
-        // Cookies are automatically updated by the backend
+        // Retry all queued requests
+        processQueue();
         // Retry original request (cookies will be sent automatically)
         return api(originalRequest);
       } catch (refreshError) {
         isRefreshing = false;
+        // Reject all queued requests
+        processQueue(refreshError);
         // Refresh failed - don't redirect, let the app handle it
         // The authStore will set isAuthenticated: false and the app will redirect
         return Promise.reject(refreshError);
