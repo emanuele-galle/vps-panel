@@ -43,7 +43,7 @@ describe('DownloadTokenService', () => {
 
       const result = await downloadTokenService.generateToken({
         userId: 'user-123',
-        resourceType: 'backup',
+        resourceType: 'file',
         resourceId: 'backup-456',
         filePath: '/var/backups/backup.tar.gz',
       });
@@ -57,7 +57,7 @@ describe('DownloadTokenService', () => {
 
       const result = await downloadTokenService.generateToken({
         userId: 'user-123',
-        resourceType: 'backup',
+        resourceType: 'file',
         resourceId: 'backup-456',
         filePath: '/var/backups/backup.tar.gz',
       });
@@ -74,7 +74,7 @@ describe('DownloadTokenService', () => {
       const result = await downloadTokenService.generateToken(
         {
           userId: 'user-123',
-          resourceType: 'backup',
+          resourceType: 'file',
           resourceId: 'backup-456',
           filePath: '/var/backups/backup.tar.gz',
         },
@@ -90,7 +90,7 @@ describe('DownloadTokenService', () => {
 
       await downloadTokenService.generateToken({
         userId: 'user-123',
-        resourceType: 'backup',
+        resourceType: 'file',
         resourceId: 'backup-456',
         filePath: '/var/backups/backup.tar.gz',
       });
@@ -98,7 +98,7 @@ describe('DownloadTokenService', () => {
       expect(mockCreate).toHaveBeenCalledWith({
         data: expect.objectContaining({
           userId: 'user-123',
-          resourceType: 'backup',
+          resourceType: 'file',
           resourceId: 'backup-456',
           filePath: '/var/backups/backup.tar.gz',
           used: false,
@@ -183,7 +183,7 @@ describe('DownloadTokenService', () => {
             findUnique: vi.fn().mockResolvedValue({
               token: 'a'.repeat(64),
               userId: 'user-123',
-              resourceType: 'backup',
+              resourceType: 'file',
               resourceId: 'backup-456',
               filePath: '/var/backups/backup.tar.gz',
               used: false,
@@ -198,7 +198,7 @@ describe('DownloadTokenService', () => {
 
       expect(result).toEqual({
         userId: 'user-123',
-        resourceType: 'backup',
+        resourceType: 'file',
         resourceId: 'backup-456',
         filePath: '/var/backups/backup.tar.gz',
       });
@@ -271,7 +271,7 @@ describe('Security: Download Token Service', () => {
     for (let i = 0; i < 10; i++) {
       const result = await downloadTokenService.generateToken({
         userId: 'user-123',
-        resourceType: 'backup',
+        resourceType: 'file',
         resourceId: 'backup-456',
         filePath: '/var/backups/backup.tar.gz',
       });

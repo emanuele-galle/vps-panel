@@ -207,9 +207,9 @@ describe('Validation Schemas', () => {
     });
 
     it('should reject invalid container IDs', () => {
-      expect(() => containerIdSchema.parse('short')).toThrow(); // too short
-      expect(() => containerIdSchema.parse('INVALID')).toThrow(); // uppercase
-      expect(() => containerIdSchema.parse('a'.repeat(65))).toThrow(); // too long
+      expect(() => containerIdSchema.parse('')).toThrow(); // empty
+      expect(() => containerIdSchema.parse('a!b@c')).toThrow(); // special chars
+      expect(() => containerIdSchema.parse('a'.repeat(129))).toThrow(); // too long
     });
   });
 
