@@ -46,7 +46,7 @@ const navigation: NavItem[] = [
   { name: 'File Manager', href: '/dashboard/files', icon: FileText },
   { name: 'Backup', href: '/dashboard/backups', icon: Package },
   { name: 'Email', href: '/dashboard/email', icon: Mail },
-  { name: 'Automazioni', href: '/dashboard/n8n', icon: Zap },
+  { name: 'Automazioni & Tools', href: '/dashboard/n8n', icon: Zap },
   { name: 'Monitoraggio', href: '/dashboard/monitoring', icon: Activity },
 ];
 

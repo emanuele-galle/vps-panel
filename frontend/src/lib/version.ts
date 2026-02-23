@@ -1,6 +1,6 @@
 // Versione della VPS Console - Aggiornare ad ogni release
-export const VERSION = '1.7.1';
-export const VERSION_DATE = '2026-02-05';
+export const VERSION = '1.8.0';
+export const VERSION_DATE = '2026-02-23';
 export const VERSION_NAME = 'FODI Console';
 
 // Changelog completo (formato Markdown)
@@ -10,6 +10,20 @@ Tutte le modifiche significative al progetto VPS Panel saranno documentate in qu
 
 Il formato è basato su [Keep a Changelog](https://keepachangelog.com/it/1.0.0/),
 e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/).
+
+## [1.8.0] - 2026-02-23
+
+### Added
+- **Pagina Automazioni & Tools** - Nuova pagina unificata per N8N e Remotion Studio
+- **Gestione Remotion Studio** - Avvia/ferma/riavvia container, metriche CPU/RAM, link diretto allo Studio
+- **Fallback multi-VPS** - Su VPS senza Remotion mostra "Non Disponibile" gracefully
+
+### Changed
+- Sidebar rinominata da "Automazioni" a "Automazioni \& Tools"
+- Pagina N8N ristrutturata con layout a sezioni dedicate
+- Version bump da 1.7.1 a 1.8.0
+
+---
 
 ## [1.7.1] - 2026-02-05
 
@@ -194,7 +208,7 @@ e questo progetto aderisce al [Semantic Versioning](https://semver.org/lang/it/)
 
 ---
 
-## Stack Attuale (v1.7.1)
+## Stack Attuale (v1.8.0)
 
 **Frontend:**
 - Next.js 16.1.1 (App Router)
@@ -252,7 +266,7 @@ Questa console rappresenta il centro di controllo per tutti i progetti sviluppat
     'File Manager integrato nativo',
     'Backup automatici con retention',
     'Gestione domini e SSL',
-    'Integrazione N8N automazioni',
+    'Automazioni & Tools (N8N + Remotion Studio)',
     'Sistema notifiche smart',
     'Changelog interattivo',
     'Autenticazione JWT',
