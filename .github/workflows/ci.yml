@@ -206,6 +206,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           command_timeout: 15m
+          timeout: 60s
           script: |
             cd /root/vps-panel
             git pull origin main
