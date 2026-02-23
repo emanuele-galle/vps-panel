@@ -14,6 +14,7 @@ volumes:
   n8n-data:
   n8n-postgres-data:
   minio-data:
+  remotion-data:
 
 services:
   # ==================== TRAEFIK ====================
@@ -432,6 +433,45 @@ services:
       - "traefik.http.services.n8n.loadbalancer.server.port=5678"
       - "app=n8n"
       - "type=automation"
+
+  # ==================== REMOTION STUDIO ====================
+  remotion-studio:
+    build:
+      context: ./remotion
+      dockerfile: Dockerfile
+    container_name: remotion-studio
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          memory: 512M
+    networks:
+      - traefik-public
+    volumes:
+      - remotion-data:/app/out
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.remotion.rule=Host(`remotion.${PANEL_DOMAIN:-localhost}`)"
+      - "traefik.http.routers.remotion.entrypoints=websecure"
+      - "traefik.http.routers.remotion.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.remotion.middlewares=security-headers@file,auth-dashboard@file"
+      - "traefik.http.services.remotion.loadbalancer.server.port=3000"
+      - "app=remotion"
+      - "type=tools"
 
   # ==================== MINIO (Shared Storage) ====================
   minio:

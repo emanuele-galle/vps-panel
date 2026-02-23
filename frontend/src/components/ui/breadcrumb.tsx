@@ -24,7 +24,7 @@ const pathLabels: Record<string, string> = {
   domains: 'Domini',
   email: 'Email',
   files: 'File Manager',
-  n8n: 'Automazioni',
+  'automazioni-tools': 'Automazioni & Tools',
   assets: 'Risorse',
   'system-settings': 'Sistema',
 };

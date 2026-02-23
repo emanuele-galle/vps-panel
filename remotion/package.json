@@ -1,0 +1,22 @@
+{
+  "name": "remotion-studio",
+  "version": "1.0.0",
+  "description": "Remotion Studio - Programmatic video creation",
+  "private": true,
+  "scripts": {
+    "studio": "remotion studio --port=3000 --bind=0.0.0.0",
+    "render": "remotion render",
+    "build": "remotion bundle"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.427",
+    "@remotion/player": "4.0.427",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "remotion": "4.0.427"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "typescript": "^5.9.0"
+  }
+}

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 
 const REMOTION_CONTAINER = 'remotion-studio';
-const REMOTION_URL = 'https://remotion.fodivps2.cloud';
+const REMOTION_URL = 'https://remotion.fodivps1.cloud';
 
 export default function AutomazioniPage() {
   // N8N state
@@ -498,7 +498,7 @@ export default function AutomazioniPage() {
           {!remotionStatus.available && (
             <p className="text-sm text-muted-foreground mt-4 pt-4 border-t">
               Il container <code>remotion-studio</code> non è presente su
-              questa VPS. Remotion Studio è disponibile solo su VPS2.
+              questa VPS. Il container Remotion Studio non è stato ancora avviato. Usa docker compose up remotion-studio per avviarlo.
             </p>
           )}
         </Card>
