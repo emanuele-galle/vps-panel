@@ -101,7 +101,7 @@ export function FileTableView({
             <SortHeader field="size" label="Dimensione" className="w-28" />
             <SortHeader field="modified" label="Modificato" className="w-40" />
             <th className="p-2 text-left w-32">Permessi</th>
-            <th className="p-2 w-16">Azioni</th>
+            <th className="p-2 w-24">Azioni</th>
           </tr>
         </thead>
         <tbody>
@@ -142,6 +142,16 @@ export function FileTableView({
                 {formatPermissions(item.permissions)}
               </td>
               <td className="p-2">
+                <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => onDownload(item)}
+                  title={item.type === 'directory' ? 'Scarica come ZIP' : 'Scarica'}
+                >
+                  <Download className="h-4 w-4" />
+                </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -154,6 +164,10 @@ export function FileTableView({
                         <DropdownMenuItem onClick={() => onLoadDirectory(item.path)}>
                           <FolderOpen className="h-4 w-4 mr-2" />
                           Apri
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onDownload(item)}>
+                          <Download className="h-4 w-4 mr-2" />
+                          Scarica come ZIP
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onToggleFavorite(item.path)}>
                           <Star className={`h-4 w-4 mr-2 ${favorites.includes(item.path) ? 'fill-yellow-400 text-yellow-400' : ''}`} />
@@ -208,6 +222,7 @@ export function FileTableView({
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                </div>
               </td>
             </tr>
           ))}

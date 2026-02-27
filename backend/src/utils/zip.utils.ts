@@ -1,7 +1,7 @@
 import archiver from 'archiver';
 import unzipper from 'unzipper';
 import { createWriteStream, createReadStream } from 'fs';
-import { mkdir, readdir, stat, rm } from 'fs/promises';
+import { mkdir, readdir, stat, rm, writeFile } from 'fs/promises';
 import { join, normalize, resolve } from 'path';
 import type { BackupAnalysis } from '../modules/backup/backup.types';
 import log from '../services/logger.service';
@@ -54,6 +54,7 @@ export class ZipUtils {
 
   /**
    * Estrae un file ZIP in una directory con protezione path traversal
+   * Uses Open.file() instead of Parse() for robust handling of large/nested ZIPs
    */
   static async extractZip(zipPath: string, targetDir: string): Promise<void> {
     await mkdir(targetDir, { recursive: true });
@@ -61,55 +62,54 @@ export class ZipUtils {
     // Resolve target directory to absolute path
     const resolvedTargetDir = resolve(targetDir);
 
-    return new Promise((resolve, reject) => {
-      const extractedPaths: string[] = [];
+    // Open.file() reads the ZIP central directory first - much more reliable
+    // than Parse() streaming which fails on large nested ZIPs and special chars
+    const directory = await unzipper.Open.file(zipPath);
 
-      createReadStream(zipPath)
-        .pipe(unzipper.Parse())
-        .on('entry', async (entry: unzipper.Entry) => {
-          const entryPath = entry.path;
-          const entryType = entry.type; // 'Directory' or 'File'
+    for (const entry of directory.files) {
+      const entryPath = entry.path;
+      const entryType = entry.type; // 'Directory' or 'File'
 
-          // Validate entry for security issues
-          const validation = this.validateZipEntry(entryPath);
-          if (!validation.safe) {
-            log.error(`[SECURITY] Rejecting ZIP entry: ${entryPath} - ${validation.reason}`);
-            entry.autodrain();
-            return;
-          }
+      // Skip macOS metadata directories
+      if (entryPath.startsWith('__MACOSX/') || entryPath.includes('/__MACOSX/')) {
+        continue;
+      }
 
-          // Validate path is within target directory
-          if (!this.isPathSafe(resolvedTargetDir, entryPath)) {
-            log.error(`[SECURITY] Path traversal attempt blocked: ${entryPath}`);
-            entry.autodrain();
-            return;
-          }
+      // Skip .DS_Store files
+      if (entryPath.endsWith('.DS_Store')) {
+        continue;
+      }
 
-          const fullPath = join(resolvedTargetDir, entryPath);
+      // Validate entry for security issues
+      const validation = this.validateZipEntry(entryPath);
+      if (!validation.safe) {
+        log.error(`[SECURITY] Rejecting ZIP entry: ${entryPath} - ${validation.reason}`);
+        continue;
+      }
 
-          try {
-            if (entryType === 'Directory') {
-              await mkdir(fullPath, { recursive: true });
-              entry.autodrain();
-            } else {
-              // Ensure parent directory exists
-              await mkdir(join(fullPath, '..'), { recursive: true });
+      // Validate path is within target directory
+      if (!this.isPathSafe(resolvedTargetDir, entryPath)) {
+        log.error(`[SECURITY] Path traversal attempt blocked: ${entryPath}`);
+        continue;
+      }
 
-              // Extract file
-              entry.pipe(createWriteStream(fullPath))
-                .on('error', (err) => {
-                  log.error({ err, path: entryPath }, 'Error extracting file');
-                });
-            }
-            extractedPaths.push(fullPath);
-          } catch (err) {
-            log.error(`Error processing ${entryPath}:`, err);
-            entry.autodrain();
-          }
-        })
-        .on('close', () => resolve())
-        .on('error', (error) => reject(error));
-    });
+      const fullPath = join(resolvedTargetDir, entryPath);
+
+      try {
+        if (entryType === 'Directory') {
+          await mkdir(fullPath, { recursive: true });
+        } else {
+          // Ensure parent directory exists
+          await mkdir(join(fullPath, '..'), { recursive: true });
+
+          // Extract file using buffer for reliability
+          const content = await entry.buffer();
+          await writeFile(fullPath, content);
+        }
+      } catch (err) {
+        log.error(`Error processing ${entryPath}:`, err);
+      }
+    }
   }
 
   /**

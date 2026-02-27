@@ -114,15 +114,15 @@ function TreeNodes({ nodes, level, onToggleExpand, onEdit, onDownload, onDelete,
                   >
                     <Edit2 className="h-3.5 w-3.5" />
                   </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onDownload(node); }}
-                    className="p-1 hover:bg-primary/20 rounded"
-                    title="Scarica"
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                  </button>
                 </>
               )}
+              <button
+                onClick={(e) => { e.stopPropagation(); onDownload(node); }}
+                className="p-1 hover:bg-primary/20 rounded"
+                title={node.type === 'directory' ? 'Scarica come ZIP' : 'Scarica'}
+              >
+                <Download className="h-3.5 w-3.5" />
+              </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(node); }}
                 className="p-1 hover:bg-destructive/20 rounded"

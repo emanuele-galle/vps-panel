@@ -21,6 +21,9 @@ export async function filesRoutes(fastify: FastifyInstance) {
   // Download file
   fastify.get('/download', filesController.downloadFile);
 
+  // Download directory as zip
+  fastify.get('/download-zip', filesController.downloadAsZip);
+
   // Get file content (text)
   fastify.get('/content', filesController.getFileContent);
 

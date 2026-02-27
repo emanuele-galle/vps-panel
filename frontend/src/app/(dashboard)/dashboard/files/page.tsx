@@ -11,8 +11,11 @@ import {
   Table as TableIcon,
   List,
   Trash2,
+  Copy,
+  Scissors,
   HelpCircle,
   ClipboardPaste,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -116,9 +119,20 @@ export default function FileManagerPage() {
             </Button>
           )}
           {fm.selectedItems.size > 0 && (
+            <>
+            <Button onClick={fm.handleBatchDownload} size="sm" variant="outline">
+              <Download className="h-4 w-4 mr-2" />Scarica ({fm.selectedItems.size})
+            </Button>
+            <Button onClick={fm.handleBatchCopy} size="sm" variant="outline">
+              <Copy className="h-4 w-4 mr-2" />Copia ({fm.selectedItems.size})
+            </Button>
+            <Button onClick={fm.handleBatchCut} size="sm" variant="outline">
+              <Scissors className="h-4 w-4 mr-2" />Sposta ({fm.selectedItems.size})
+            </Button>
             <Button onClick={fm.handleBatchDelete} variant="destructive" size="sm">
               <Trash2 className="h-4 w-4 mr-2" />Elimina ({fm.selectedItems.size})
             </Button>
+            </>
           )}
         </div>
       </div>

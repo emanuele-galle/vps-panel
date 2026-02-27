@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import { createReadStream } from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -429,6 +430,44 @@ export const filesService = {
       await fs.cp(absoluteSourcePath, absoluteDestinationPath, { recursive: true });
     } catch (error) {
       throw new AppError(500, `Failed to copy item: ${(error as Error).message}`);
+    }
+  },
+
+  async downloadAsZip(
+    itemPath: string,
+    userRole: string
+  ): Promise<{ stream: ReturnType<typeof createReadStream>; cleanup: () => Promise<void>; filename: string }> {
+    const allowedPaths = userRole === 'ADMIN' ? ADMIN_ALLOWED_PATHS : STAFF_ALLOWED_PATHS;
+    const absolutePath = '/' + itemPath;
+
+    const isAllowed = allowedPaths.some(allowed => absolutePath.startsWith(allowed));
+    if (!isAllowed) {
+      throw new AppError(403, 'Access denied');
+    }
+
+    // Check path exists
+    try {
+      await fs.stat(absolutePath);
+    } catch {
+      throw new AppError(404, 'Path not found');
+    }
+
+    const baseName = path.basename(absolutePath);
+    const tmpFile = `/tmp/download-${Date.now()}-${baseName}.zip`;
+
+    try {
+      const command = `cd "${path.dirname(absolutePath)}" && zip -r -q "${tmpFile}" "${baseName}"`;
+      await execAsync(command, { timeout: 120000, maxBuffer: 10 * 1024 * 1024 });
+
+      const stream = createReadStream(tmpFile);
+      const cleanup = async () => {
+        try { await fs.unlink(tmpFile); } catch {}
+      };
+
+      return { stream, cleanup, filename: `${baseName}.zip` };
+    } catch (error) {
+      try { await fs.unlink(tmpFile); } catch {}
+      throw new AppError(500, 'Failed to create zip archive');
     }
   },
 

@@ -214,6 +214,41 @@ export const filesController = {
     }
   },
 
+  async downloadAsZip(
+    request: FastifyRequest<{ Querystring: { path: string } }>,
+    reply: FastifyReply
+  ): Promise<void> {
+    try {
+      const user = request.user as { userId: string; role: UserRole } | undefined;
+
+      if (!user || !['ADMIN', 'STAFF'].includes(user.role)) {
+        throw new AppError(403, 'Forbidden - Admin or Staff role required');
+      }
+
+      const { path: itemPath } = downloadFileSchema.parse(request.query);
+      const { stream, cleanup, filename } = await filesService.downloadAsZip(itemPath, user.role);
+
+      reply.raw.on('close', () => { cleanup(); });
+
+      return reply
+        .header('Content-Disposition', `attachment; filename="${filename}"`)
+        .type('application/zip')
+        .send(stream);
+    } catch (error) {
+      if (error instanceof AppError) {
+        return reply.code(error.statusCode).send({
+          success: false,
+          error: error.message,
+        });
+      } else {
+        return reply.code(500).send({
+          success: false,
+          error: 'Failed to create zip archive',
+        });
+      }
+    }
+  },
+
   async getFileContent(
     request: FastifyRequest<{ Querystring: { path: string } }>,
     reply: FastifyReply

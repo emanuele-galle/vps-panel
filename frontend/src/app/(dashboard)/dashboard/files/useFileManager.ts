@@ -5,6 +5,7 @@ import type { FileItem, TreeNode, ViewMode, SortField, SortOrder } from './types
 import { isTextFile } from './file-utils';
 
 export interface Clipboard {
+  items?: FileItem[];
   item: FileItem;
   operation: 'copy' | 'cut';
 }
@@ -62,9 +63,12 @@ export interface UseFileManagerReturn {
   toggleFavorite: (path: string) => void;
   toggleExpand: (targetPath: string) => Promise<void>;
   getBreadcrumbs: () => { name: string; path: string }[];
-  handleDownload: (item: FileItem) => void;
+  handleDownload: (item: FileItem) => Promise<void>;
   handleDelete: (item: FileItem) => Promise<void>;
   handleBatchDelete: () => Promise<void>;
+  handleBatchDownload: () => Promise<void>;
+  handleBatchCopy: () => void;
+  handleBatchCut: () => void;
   handleEdit: (item: FileItem) => Promise<void>;
   handleSaveFile: () => Promise<void>;
   handleNewFolder: () => Promise<void>;
@@ -312,8 +316,36 @@ export function useFileManager(): UseFileManagerReturn {
   };
 
   // --- File operations ---
-  const handleDownload = (item: FileItem) => {
-    window.open(`${API_URL}/api/files/download?path=${encodeURIComponent(item.path)}`, '_blank');
+  const downloadBlob = async (url: string, filename: string) => {
+    const response = await fetch(url, { credentials: 'include' });
+    if (!response.ok) throw new Error('Download fallito');
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
+  };
+
+  const handleDownload = async (item: FileItem) => {
+    try {
+      if (item.type === 'directory') {
+        await downloadBlob(
+          `${API_URL}/api/files/download-zip?path=${encodeURIComponent(item.path)}`,
+          `${item.name}.zip`
+        );
+      } else {
+        await downloadBlob(
+          `${API_URL}/api/files/download?path=${encodeURIComponent(item.path)}`,
+          item.name
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Download fallito');
+    }
   };
 
   const handleDelete = async (item: FileItem) => {
@@ -329,6 +361,14 @@ export function useFileManager(): UseFileManagerReturn {
       reloadView();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Impossibile eliminare');
+    }
+  };
+
+  const handleBatchDownload = async () => {
+    const items = currentItems.filter(i => selectedItems.has(i.path));
+    if (items.length === 0) return;
+    for (const item of items) {
+      await handleDownload(item);
     }
   };
 
@@ -400,7 +440,7 @@ export function useFileManager(): UseFileManagerReturn {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: currentPath ? `${currentPath}/${newFolderName}` : newFolderName }),
+        body: JSON.stringify({ path: currentPath, name: newFolderName }),
       });
       if (!response.ok) throw new Error('Impossibile creare la cartella');
       setShowNewFolderModal(false);
@@ -531,23 +571,46 @@ export function useFileManager(): UseFileManagerReturn {
     setTimeout(() => setError(null), 4000);
   };
 
+  const handleBatchCopy = () => {
+    if (selectedItems.size === 0) return;
+    const items = currentItems.filter(i => selectedItems.has(i.path));
+    setClipboard({ item: items[0], items, operation: 'copy' });
+    setError(`✓ ${items.length} elementi copiati negli appunti`);
+    setTimeout(() => setError(null), 4000);
+  };
+
+  const handleBatchCut = () => {
+    if (selectedItems.size === 0) return;
+    const items = currentItems.filter(i => selectedItems.has(i.path));
+    setClipboard({ item: items[0], items, operation: 'cut' });
+    setError(`✂️ ${items.length} elementi tagliati negli appunti`);
+    setTimeout(() => setError(null), 4000);
+  };
+
   const handlePaste = async () => {
     if (!clipboard) { setError('Nessun elemento negli appunti'); return; }
+    const itemsToPaste = clipboard.items || [clipboard.item];
     try {
       const endpoint = clipboard.operation === 'copy' ? '/copy' : '/move';
-      const response = await fetchWithCsrf(`${API_URL}/api/files${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ sourcePath: clipboard.item.path, destinationDir: currentPath }),
-      });
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Operazione fallita');
+      let failed = 0;
+      for (const item of itemsToPaste) {
+        const response = await fetchWithCsrf(`${API_URL}/api/files${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ sourcePath: item.path, destinationDir: currentPath }),
+        });
+        if (!response.ok) failed++;
       }
-      setError(`✓ ${clipboard.item.name} ${clipboard.operation === 'copy' ? 'copiato' : 'spostato'} con successo`);
+      const op = clipboard.operation === 'copy' ? 'copiati' : 'spostati';
+      if (failed === 0) {
+        setError(`✓ ${itemsToPaste.length} elementi ${op} con successo`);
+      } else {
+        setError(`${itemsToPaste.length - failed}/${itemsToPaste.length} elementi ${op} (${failed} falliti)`);
+      }
       setTimeout(() => setError(null), 5000);
       if (clipboard.operation === 'cut') setClipboard(null);
+      setSelectedItems(new Set());
       reloadView();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Operazione fallita');
@@ -742,6 +805,9 @@ export function useFileManager(): UseFileManagerReturn {
     handleDownload,
     handleDelete,
     handleBatchDelete,
+    handleBatchDownload,
+    handleBatchCopy,
+    handleBatchCut,
     handleEdit,
     handleSaveFile,
     handleNewFolder,

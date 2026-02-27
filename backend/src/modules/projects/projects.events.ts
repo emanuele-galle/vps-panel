@@ -118,8 +118,8 @@ export class ProjectsWebSocketHandler {
     // Send to global clients
     this.globalClients.forEach((client) => {
       try {
-        if (client.socket?.readyState === 1) { // WebSocket.OPEN
-          client.socket.send(message);
+        if (client.readyState === 1) { // WebSocket.OPEN
+          client.send(message);
         }
       } catch (error) {
         log.error('[Projects WebSocket] Error sending to global client:', error);
@@ -130,8 +130,8 @@ export class ProjectsWebSocketHandler {
     if (projectId && this.clients.has(projectId)) {
       this.clients.get(projectId)!.forEach((client) => {
         try {
-          if (client.socket?.readyState === 1) {
-            client.socket.send(message);
+          if (client.readyState === 1) {
+            client.send(message);
           }
         } catch (error) {
           log.error(`[Projects WebSocket] Error sending to project ${projectId} client:`, error);
