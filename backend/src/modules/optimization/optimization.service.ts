@@ -381,7 +381,7 @@ export class OptimizationService {
     const totalReclaimable = items.reduce((sum, item) => sum + item.reclaimable, 0);
 
     return {
-      items: items.filter(item => item.reclaimable > 0),
+      items,
       totalReclaimable,
       totalReclaimableFormatted: this.formatBytes(totalReclaimable),
       diskUsage,

@@ -59,25 +59,20 @@ const CATEGORY_CONFIG: Record<string, { icon: React.ElementType; label: string; 
     label: 'Cache Build Docker',
     apiEndpoint: '/optimization/clean/docker-cache',
   },
-  'Docker Unused Images': {
+  'Immagini Dangling': {
     icon: Package,
     label: 'Immagini non usate',
-    apiEndpoint: '/optimization/prune/unused-images',
+    apiEndpoint: '/optimization/prune/images',
   },
-  'Docker Volumes': {
+  'Volumi Orfani': {
     icon: Database,
     label: 'Volumi Docker',
     apiEndpoint: '/optimization/prune/volumes',
   },
-  'NPM Cache': {
-    icon: Package,
-    label: 'Cache NPM',
-    apiEndpoint: '/optimization/clean/npm-cache',
-  },
-  'System Logs': {
+  'Log Container': {
     icon: FileText,
-    label: 'Log di sistema',
-    apiEndpoint: '/optimization/clean/logs',
+    label: 'Log Container',
+    apiEndpoint: '/optimization/clean/container-logs',
   },
 };
 

@@ -30,6 +30,14 @@ interface SecurityEvent {
   metadata?: Record<string, unknown>;
 }
 
+interface SecurityStatsRaw {
+  totalEvents: number;
+  byType: Record<string, number>;
+  bySeverity: Record<string, number>;
+  blockedAttempts: number;
+  topIps: { ip: string; count: number }[];
+}
+
 interface SecurityStats {
   totalEvents: number;
   failedLogins: number;
@@ -114,7 +122,17 @@ export default function SecurityPage() {
         api.get(`/security/stats?hours=${hours}`),
       ]);
       setEvents(eventsRes.data.data || []);
-      setStats(statsRes.data.data || null);
+      const raw = statsRes.data.data as SecurityStatsRaw;
+      if (raw) {
+        setStats({
+          totalEvents: raw.totalEvents,
+          failedLogins: (raw.byType['AUTH_LOGIN_FAILURE'] || 0) + (raw.byType['AUTH_2FA_FAILURE'] || 0) + (raw.byType['BRUTE_FORCE_DETECTED'] || 0),
+          blockedRequests: raw.blockedAttempts || 0,
+          suspiciousIPs: (raw.topIps || []).filter(ip => ip.count > 2).length,
+          criticalEvents: raw.bySeverity['CRITICAL'] || 0,
+          highEvents: raw.bySeverity['HIGH'] || 0,
+        });
+      }
     } catch {
       toast.error('Errore nel caricamento dei dati di sicurezza');
     } finally {
