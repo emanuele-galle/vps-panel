@@ -13,7 +13,20 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MetricsCard } from '@/components/monitoring/MetricsCard';
-import { ResourceUsageChart } from '@/components/monitoring/ResourceUsageChart';
+import dynamic from 'next/dynamic';
+
+// Lazy load charts (heavy recharts bundle, below the fold)
+const ResourceUsageChart = dynamic(
+  () => import('@/components/monitoring/ResourceUsageChart').then((m) => ({ default: m.ResourceUsageChart })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="glass rounded-xl border border-border/50 p-6 h-[300px] flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground text-sm">Caricamento grafico...</div>
+      </div>
+    ),
+  }
+);
 import { DiskStoragePanel } from '@/components/monitoring/DiskStoragePanel';
 import { useMonitoringStore } from '@/store/monitoringStore';
 import { staggerContainer, fadeInUp } from '@/lib/motion';

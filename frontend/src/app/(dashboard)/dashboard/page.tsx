@@ -25,6 +25,8 @@ import {
   Zap,
   Clock,
   ChevronRight,
+  Wrench,
+  Shield,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
@@ -355,7 +357,7 @@ export default function DashboardPage() {
               {[
                 { label: 'Nuovo Progetto', icon: FolderGit2, href: '/dashboard/projects', color: 'text-primary' },
                 { label: 'Nuovo Database', icon: Database, href: '/dashboard/databases', color: 'text-purple-500' },
-                { label: 'Aggiungi Dominio', icon: Globe, href: '/dashboard/domains', color: 'text-warning' },
+                { label: 'Manutenzione', icon: Wrench, href: '/dashboard/maintenance', color: 'text-warning' },
                 { label: 'Monitoraggio', icon: Activity, href: '/dashboard/monitoring', color: 'text-success' },
               ].map((action, index) => (
                 <motion.div

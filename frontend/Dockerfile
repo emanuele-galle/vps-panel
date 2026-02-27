@@ -7,7 +7,7 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
+# Install dependencies (including sharp for image optimization)
 RUN npm ci --legacy-peer-deps
 
 # Rebuild the source code only when needed
@@ -54,8 +54,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Install sharp for image optimization in standalone mode
-RUN npm install --os=linux --cpu=x64 --legacy-peer-deps sharp
+# Copy sharp binaries from builder (avoids npm install in runner = no npm cache bloat)
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/sharp ./node_modules/sharp
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@img ./node_modules/@img
 
 USER nextjs
 

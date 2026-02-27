@@ -302,7 +302,7 @@ services:
 
   # ==================== ADMINER ====================
   adminer:
-    image: adminer:latest
+    image: adminer:4.17.1
     container_name: vps-panel-adminer
     restart: unless-stopped
     logging:
@@ -415,6 +415,8 @@ services:
       # Code node modules - restricted to necessary builtins only
       NODE_FUNCTION_ALLOW_BUILTIN: "crypto,url,querystring,path,util,buffer,stream,http,https,zlib,os"
       NODE_FUNCTION_ALLOW_EXTERNAL: "axios,lodash,moment,date-fns,xml2js,cheerio,jsonwebtoken,uuid"
+      # Community Packages
+      N8N_COMMUNITY_PACKAGES_ENABLED: "true"
     depends_on:
       n8n-postgres:
         condition: service_healthy
@@ -475,7 +477,7 @@ services:
 
   # ==================== MINIO (Shared Storage) ====================
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-01-20T14-49-07Z
     container_name: vps-panel-minio
     restart: unless-stopped
     logging:
@@ -501,7 +503,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-vps_minio_admin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Please set MINIO_ROOT_PASSWORD}
-      MINIO_BROWSER_REDIRECT_URL: https://storage.${PANEL_DOMAIN:-localhost}
+      MINIO_BROWSER_REDIRECT_URL: https://minio-console.${PANEL_DOMAIN:-localhost}
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
@@ -511,13 +513,13 @@ services:
     labels:
       - "traefik.enable=true"
       # MinIO API
-      - "traefik.http.routers.minio-api.rule=Host(`s3.${PANEL_DOMAIN:-localhost}`)"
+      - "traefik.http.routers.minio-api.rule=Host(`storage.${PANEL_DOMAIN:-localhost}`)"
       - "traefik.http.routers.minio-api.entrypoints=websecure"
       - "traefik.http.routers.minio-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.minio-api.service=minio-api"
       - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
       # MinIO Console
-      - "traefik.http.routers.minio-console.rule=Host(`storage.${PANEL_DOMAIN:-localhost}`)"
+      - "traefik.http.routers.minio-console.rule=Host(`minio-console.${PANEL_DOMAIN:-localhost}`)"
       - "traefik.http.routers.minio-console.entrypoints=websecure"
       - "traefik.http.routers.minio-console.tls.certresolver=letsencrypt"
       - "traefik.http.routers.minio-console.service=minio-console"

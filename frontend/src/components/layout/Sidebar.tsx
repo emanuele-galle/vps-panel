@@ -19,6 +19,8 @@ import {
   ClipboardList,
   Package,
   Zap,
+  Shield,
+  Wrench,
   LucideIcon,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
@@ -47,12 +49,14 @@ const navigation: NavItem[] = [
   { name: 'Backup', href: '/dashboard/backups', icon: Package },
   { name: 'Email', href: '/dashboard/email', icon: Mail },
   { name: 'Automazioni & Tools', href: '/dashboard/automazioni-tools', icon: Zap },
+  { name: 'Manutenzione', href: '/dashboard/maintenance', icon: Wrench },
   { name: 'Monitoraggio', href: '/dashboard/monitoring', icon: Activity },
 ];
 
 const adminNavigation: NavItem[] = [
   { name: 'Utenti', href: '/dashboard/users', icon: Users },
   { name: 'Log Attivita', href: '/dashboard/activity', icon: ClipboardList },
+  { name: 'Sicurezza', href: '/dashboard/security', icon: Shield },
   { name: 'Impostazioni', href: '/dashboard/settings', icon: Settings },
 ];
 

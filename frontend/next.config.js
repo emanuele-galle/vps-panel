@@ -29,11 +29,13 @@ const nextConfig = {
       'recharts',
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-scroll-area',
       '@radix-ui/react-select',
       '@radix-ui/react-tabs',
       '@radix-ui/react-tooltip',
       'date-fns',
       'framer-motion',
+      'sonner',
     ],
   },
 

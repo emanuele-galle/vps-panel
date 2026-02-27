@@ -2,7 +2,7 @@ FROM node:24-slim AS base
 
 # Runtime dependencies only
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    openssl ca-certificates gnupg wget lsb-release curl \
+    openssl ca-certificates gnupg wget lsb-release curl zip unzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Add PostgreSQL 16 client
@@ -34,17 +34,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Install all dependencies (including dev)
-RUN npm ci --include=dev --legacy-peer-deps
+# Install all dependencies (including dev) and compile native modules
+RUN npm install --include=dev --legacy-peer-deps
 
 # Generate Prisma Client
 RUN npx prisma generate
 
-# Copy source code
+# Copy source code and build
 COPY . .
-
-# Build TypeScript to JavaScript
 RUN npm run build
+
+# Prune devDependencies AFTER build (keeps compiled native binaries like node-pty)
+RUN npm prune --omit=dev --legacy-peer-deps
 
 # ============ PRODUCTION STAGE ============
 FROM base AS runner
@@ -57,20 +58,16 @@ RUN groupadd --system --gid 1001 nodejs && \
 ENV NODE_ENV=production
 ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 
-# Copy compiled code and production dependencies
-COPY --from=builder /app/dist ./dist
+# Copy prod-only node_modules (already pruned in builder, compiled binaries intact)
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma.config.ts ./
 
-# Regenerate Prisma client for this architecture
-RUN npx prisma generate
-
+# Note: prisma generate was done in builder (same linux/amd64 arch, no regen needed)
 # Note: Cannot run as non-root because node-pty and Docker socket require root access
-# TODO: Implement proper rootless Docker setup for full security
 
 EXPOSE 3001
 
-# Run pre-compiled JavaScript (faster startup, lower memory)
 CMD ["node", "dist/server.js"]
