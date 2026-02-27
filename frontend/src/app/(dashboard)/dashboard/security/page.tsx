@@ -50,7 +50,8 @@ const SEVERITY_CONFIG = {
   CRITICAL: { label: 'Critica', className: 'badge-error' },
 };
 
-function formatEventType(type: string): string {
+function formatEventType(type: string | undefined): string {
+  if (!type) return 'Evento';
   return type.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 }
 

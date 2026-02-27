@@ -209,7 +209,7 @@ export default function MaintenancePage() {
     setIsAnalyzing(true);
     try {
       const res = await api.get('/optimization/analyze');
-      setAnalysis(res.data.data || []);
+      setAnalysis(res.data.data?.items || []);
     } catch {
       toast.error('Errore durante l\'analisi del disco');
     } finally {
