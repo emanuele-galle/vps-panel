@@ -210,14 +210,21 @@ jobs:
           script: |
             cd /root/vps-panel
 
+            # Backup VPS-specific middlewares before pull (git may delete it)
+            cp traefik/dynamic/middlewares.yml traefik/dynamic/middlewares.yml.deploy-bak 2>/dev/null || true
+
             # Safety: stash any local changes before pull
             git stash --quiet 2>/dev/null || true
             git pull origin main
 
-            # Ensure VPS-specific middlewares.yml exists
-            if [ ! -f traefik/dynamic/middlewares.yml ]; then
+            # Restore VPS-specific middlewares.yml (pull may have deleted it)
+            if [ ! -f traefik/dynamic/middlewares.yml ] && [ -f traefik/dynamic/middlewares.yml.deploy-bak ]; then
+              mv traefik/dynamic/middlewares.yml.deploy-bak traefik/dynamic/middlewares.yml
+            elif [ ! -f traefik/dynamic/middlewares.yml ]; then
               cp traefik/dynamic/middlewares.yml.example traefik/dynamic/middlewares.yml
               echo "⚠️  Generated middlewares.yml from example — review CSP/CORS settings!"
+            else
+              rm -f traefik/dynamic/middlewares.yml.deploy-bak
             fi
 
             # Build and deploy
