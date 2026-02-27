@@ -503,7 +503,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-vps_minio_admin}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Please set MINIO_ROOT_PASSWORD}
-      MINIO_BROWSER_REDIRECT_URL: https://minio-console.${PANEL_DOMAIN:-localhost}
+      MINIO_BROWSER_REDIRECT_URL: https://${MINIO_CONSOLE_SUBDOMAIN:-minio}.${PANEL_DOMAIN:-localhost}
     command: server /data --console-address ":9001"
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
@@ -512,14 +512,14 @@ services:
       retries: 3
     labels:
       - "traefik.enable=true"
-      # MinIO API
+      # MinIO API (storage.DOMAIN)
       - "traefik.http.routers.minio-api.rule=Host(`storage.${PANEL_DOMAIN:-localhost}`)"
       - "traefik.http.routers.minio-api.entrypoints=websecure"
       - "traefik.http.routers.minio-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.minio-api.service=minio-api"
       - "traefik.http.services.minio-api.loadbalancer.server.port=9000"
-      # MinIO Console
-      - "traefik.http.routers.minio-console.rule=Host(`minio-console.${PANEL_DOMAIN:-localhost}`)"
+      # MinIO Console (MINIO_CONSOLE_SUBDOMAIN.DOMAIN, default: minio)
+      - "traefik.http.routers.minio-console.rule=Host(`${MINIO_CONSOLE_SUBDOMAIN:-minio}.${PANEL_DOMAIN:-localhost}`)"
       - "traefik.http.routers.minio-console.entrypoints=websecure"
       - "traefik.http.routers.minio-console.tls.certresolver=letsencrypt"
       - "traefik.http.routers.minio-console.service=minio-console"

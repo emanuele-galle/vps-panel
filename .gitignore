@@ -39,3 +39,7 @@ coverage/
 .cache/
 temp/
 tmp/
+
+# VPS-specific configs (each instance has its own)
+traefik/dynamic/middlewares.yml
+docker-compose.override.yml

@@ -209,7 +209,18 @@ jobs:
           timeout: 60s
           script: |
             cd /root/vps-panel
+
+            # Safety: stash any local changes before pull
+            git stash --quiet 2>/dev/null || true
             git pull origin main
+
+            # Ensure VPS-specific middlewares.yml exists
+            if [ ! -f traefik/dynamic/middlewares.yml ]; then
+              cp traefik/dynamic/middlewares.yml.example traefik/dynamic/middlewares.yml
+              echo "⚠️  Generated middlewares.yml from example — review CSP/CORS settings!"
+            fi
+
+            # Build and deploy
             docker compose build --no-cache backend frontend
             docker compose up -d backend frontend
 
