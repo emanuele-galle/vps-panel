@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import api from '@/lib/api';
 import type { FileItem, TreeNode, ViewMode, SortField, SortOrder } from './types';
 import { isTextFile } from './file-utils';
 
@@ -127,37 +128,17 @@ export function useFileManager(): UseFileManagerReturn {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [isUploading, setIsUploading] = useState(false);
 
-  const API_URL = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
-    ? `https://api.${window.location.hostname}`
-    : 'http://localhost:3001';
-
   const getCsrfToken = (): string | null => {
     if (typeof document === 'undefined') return null;
     const match = document.cookie.match(/csrf_token=([^;]+)/);
     return match ? match[1] : null;
   };
 
-  const fetchWithCsrf = async (url: string, options: RequestInit = {}): Promise<Response> => {
-    const csrfToken = getCsrfToken();
-    const headers = { ...options.headers };
-
-    if (options.method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(options.method)) {
-      if (csrfToken) {
-        (headers as Record<string, string>)['x-csrf-token'] = csrfToken;
-      }
-    }
-
-    return fetch(url, { ...options, headers });
-  };
-
   // --- Data loading ---
+  // Uses axios api instance (has 401 → token refresh interceptor)
   const fetchDirectory = async (path: string = ''): Promise<FileItem[]> => {
-    const response = await fetch(`${API_URL}/api/files/list?path=${encodeURIComponent(path)}`, {
-      credentials: 'include',
-    });
-    if (!response.ok) throw new Error('Impossibile caricare la cartella');
-    const data = await response.json();
-    return data.data.items;
+    const res = await api.get('/files/list', { params: { path } });
+    return res.data.data.items;
   };
 
   const loadDirectory = async (path: string = '') => {
@@ -316,10 +297,9 @@ export function useFileManager(): UseFileManagerReturn {
   };
 
   // --- File operations ---
-  const downloadBlob = async (url: string, filename: string) => {
-    const response = await fetch(url, { credentials: 'include' });
-    if (!response.ok) throw new Error('Download fallito');
-    const blob = await response.blob();
+  const downloadBlob = async (endpoint: string, params: Record<string, string>, filename: string) => {
+    const res = await api.get(endpoint, { params, responseType: 'blob', timeout: 120000 });
+    const blob = res.data as Blob;
     const blobUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = blobUrl;
@@ -333,15 +313,9 @@ export function useFileManager(): UseFileManagerReturn {
   const handleDownload = async (item: FileItem) => {
     try {
       if (item.type === 'directory') {
-        await downloadBlob(
-          `${API_URL}/api/files/download-zip?path=${encodeURIComponent(item.path)}`,
-          `${item.name}.zip`
-        );
+        await downloadBlob('/files/download-zip', { path: item.path }, `${item.name}.zip`);
       } else {
-        await downloadBlob(
-          `${API_URL}/api/files/download?path=${encodeURIComponent(item.path)}`,
-          item.name
-        );
+        await downloadBlob('/files/download', { path: item.path }, item.name);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Download fallito');
@@ -351,13 +325,7 @@ export function useFileManager(): UseFileManagerReturn {
   const handleDelete = async (item: FileItem) => {
     if (!confirm(`Eliminare ${item.name}?`)) return;
     try {
-      const response = await fetchWithCsrf(`${API_URL}/api/files/item`, {
-        method: 'DELETE',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: item.path }),
-      });
-      if (!response.ok) throw new Error('Impossibile eliminare');
+      await api.delete('/files/item', { data: { path: item.path } });
       reloadView();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Impossibile eliminare');
@@ -377,12 +345,7 @@ export function useFileManager(): UseFileManagerReturn {
     if (!confirm(`Eliminare ${selectedItems.size} elementi selezionati?`)) return;
     for (const path of selectedItems) {
       try {
-        await fetchWithCsrf(`${API_URL}/api/files/item`, {
-          method: 'DELETE',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ path }),
-        });
+        await api.delete('/files/item', { data: { path } });
       } catch (err) {
         console.error('Impossibile eliminare', path, err);
       }
@@ -400,10 +363,8 @@ export function useFileManager(): UseFileManagerReturn {
     setEditingFile(item);
     setIsLoadingContent(true);
     try {
-      const response = await fetch(`${API_URL}/api/files/content?path=${encodeURIComponent(item.path)}`, { credentials: 'include' });
-      if (!response.ok) throw new Error('Impossibile caricare il file');
-      const text = await response.text();
-      setFileContent(text);
+      const res = await api.get('/files/content', { params: { path: item.path } });
+      setFileContent(res.data.data.content);
     } catch {
       setError('Impossibile caricare il contenuto del file');
       setEditingFile(null);
@@ -419,12 +380,9 @@ export function useFileManager(): UseFileManagerReturn {
     formData.append('file', blob, editingFile.name);
     const parentPath = editingFile.path.split('/').slice(0, -1).join('/');
     try {
-      const response = await fetchWithCsrf(`${API_URL}/api/files/upload?path=${encodeURIComponent(parentPath)}`, {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
+      await api.post(`/files/upload?path=${encodeURIComponent(parentPath)}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-      if (!response.ok) throw new Error('Impossibile salvare');
       setEditingFile(null);
       setFileContent('');
       reloadView();
@@ -436,13 +394,7 @@ export function useFileManager(): UseFileManagerReturn {
   const handleNewFolder = async () => {
     if (!newFolderName.trim()) return;
     try {
-      const response = await fetchWithCsrf(`${API_URL}/api/files/directory`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: currentPath, name: newFolderName }),
-      });
-      if (!response.ok) throw new Error('Impossibile creare la cartella');
+      await api.post('/files/directory', { path: currentPath, name: newFolderName });
       setShowNewFolderModal(false);
       setNewFolderName('');
       reloadView();
@@ -451,7 +403,7 @@ export function useFileManager(): UseFileManagerReturn {
     }
   };
 
-  const uploadFileWithProgress = (file: File): Promise<boolean> => {
+  const uploadFileWithProgress = (file: File, currentUploadPath: string): Promise<boolean> => {
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
       const formData = new FormData();
@@ -466,7 +418,8 @@ export function useFileManager(): UseFileManagerReturn {
       xhr.addEventListener('load', () => resolve(xhr.status >= 200 && xhr.status < 300));
       xhr.addEventListener('error', () => resolve(false));
 
-      xhr.open('POST', `${API_URL}/api/files/upload?path=${encodeURIComponent(currentPath)}`);
+      const apiUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api').replace(/\/$/, '');
+      xhr.open('POST', `${apiUrl}/files/upload?path=${encodeURIComponent(currentUploadPath)}`);
       xhr.withCredentials = true;
       const csrfToken = getCsrfToken();
       if (csrfToken) xhr.setRequestHeader('x-csrf-token', csrfToken);
@@ -485,7 +438,7 @@ export function useFileManager(): UseFileManagerReturn {
       for (let i = 0; i < uploadFiles.length; i++) {
         const file = uploadFiles[i];
         setUploadProgress(0);
-        const ok = await uploadFileWithProgress(file);
+        const ok = await uploadFileWithProgress(file, currentPath);
         if (!ok) failedFiles.push(file.name);
         else successCount++;
       }
@@ -532,13 +485,10 @@ export function useFileManager(): UseFileManagerReturn {
         try {
           const formData = new FormData();
           formData.append('file', file);
-          const response = await fetchWithCsrf(`${API_URL}/api/files/upload?path=${encodeURIComponent(currentPath)}`, {
-            method: 'POST',
-            credentials: 'include',
-            body: formData,
+          await api.post(`/files/upload?path=${encodeURIComponent(currentPath)}`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
           });
-          if (!response.ok) failedFiles.push(file.name);
-          else successCount++;
+          successCount++;
         } catch {
           failedFiles.push(file.name);
         }
@@ -591,16 +541,14 @@ export function useFileManager(): UseFileManagerReturn {
     if (!clipboard) { setError('Nessun elemento negli appunti'); return; }
     const itemsToPaste = clipboard.items || [clipboard.item];
     try {
-      const endpoint = clipboard.operation === 'copy' ? '/copy' : '/move';
+      const endpoint = clipboard.operation === 'copy' ? '/files/copy' : '/files/move';
       let failed = 0;
       for (const item of itemsToPaste) {
-        const response = await fetchWithCsrf(`${API_URL}/api/files${endpoint}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ sourcePath: item.path, destinationDir: currentPath }),
-        });
-        if (!response.ok) failed++;
+        try {
+          await api.post(endpoint, { sourcePath: item.path, destinationDir: currentPath });
+        } catch {
+          failed++;
+        }
       }
       const op = clipboard.operation === 'copy' ? 'copiati' : 'spostati';
       if (failed === 0) {
@@ -627,29 +575,31 @@ export function useFileManager(): UseFileManagerReturn {
     setIsLoadingContent(true);
     try {
       if (imageExts.includes(ext) || ext === 'pdf') {
-        const response = await fetch(`${API_URL}/api/files/download?path=${encodeURIComponent(item.path)}`, { credentials: 'include' });
-        if (!response.ok) throw new Error('Download fallito');
-        const blob = await response.blob();
-        const objectUrl = URL.createObjectURL(blob);
+        const res = await api.get('/files/download', {
+          params: { path: item.path },
+          responseType: 'blob',
+          timeout: 60000,
+        });
+        const objectUrl = URL.createObjectURL(res.data as Blob);
         setPreviewFile(item);
         setPreviewType(ext === 'pdf' ? 'pdf' : 'image');
         setPreviewContent(objectUrl);
       } else if (textExts.includes(ext) || item.size < 1000000) {
         try {
-          const contentResponse = await fetch(`${API_URL}/api/files/content?path=${encodeURIComponent(item.path)}`, { credentials: 'include' });
-          let text;
-          if (contentResponse.ok) {
-            const data = await contentResponse.json();
-            text = data.data.content;
-          } else {
-            const downloadResponse = await fetch(`${API_URL}/api/files/download?path=${encodeURIComponent(item.path)}`, { credentials: 'include' });
-            text = await downloadResponse.text();
-          }
+          const res = await api.get('/files/content', { params: { path: item.path } });
+          const text = res.data.data.content;
           setPreviewFile(item);
           setPreviewType('text');
           setPreviewContent(text);
         } catch {
-          throw new Error('Impossibile caricare contenuto file');
+          // fallback: download as text
+          const res = await api.get('/files/download', {
+            params: { path: item.path },
+            responseType: 'text',
+          });
+          setPreviewFile(item);
+          setPreviewType('text');
+          setPreviewContent(res.data as string);
         }
       } else {
         throw new Error('Tipo di file non supportato per preview. Usa Download.');
@@ -665,21 +615,14 @@ export function useFileManager(): UseFileManagerReturn {
   const handleExtract = async () => {
     if (!extractingArchive) return;
     try {
-      const response = await fetchWithCsrf(`${API_URL}/api/files/extract`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          archivePath: extractingArchive.path,
-          destinationPath: extractDestination || extractingArchive.path.split('/').slice(0, -1).join('/'),
-        }),
+      const res = await api.post('/files/extract', {
+        archivePath: extractingArchive.path,
+        destinationPath: extractDestination || extractingArchive.path.split('/').slice(0, -1).join('/'),
       });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Estrazione fallita');
       setExtractingArchive(null);
       setExtractDestination('');
       reloadView();
-      setError(`Successo: ${data.data.filesExtracted} elementi estratti`);
+      setError(`Successo: ${res.data.data.filesExtracted} elementi estratti`);
       setTimeout(() => setError(null), 5000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Estrazione fallita');
